@@ -1,0 +1,32 @@
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=kassa_core.settings
+      - POSTGRES_DB=kassa_core_db
+      - POSTGRES_USER=kassa_core_user
+      - POSTGRES_PASSWORD=kassa_core_pass
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: kassa_core_db
+      POSTGRES_USER: kassa_core_user
+      POSTGRES_PASSWORD: kassa_core_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

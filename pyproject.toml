@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "kassa-core-backend"
+version = "0.1.0"
+description = ""
+authors = ["Viktor Zagoruyko <v.a.zagoruyko.2@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^6.0.1"
+psycopg2-binary = "^2.9.11"
+django-environ = "^0.12.0"
+django-simple-history = "^3.11.0"
+django-viewflow = "^2.2.15"
+python-json-logger = "^4.0.0"
+gunicorn = "^24.1.1"
+rollbar = "^1.3.0"
+requests = "^2.32.5"
+pillow = "^12.1.0"
+django-debug-toolbar = "^6.2.0"
+django-phonenumber-field = {extras = ["phonenumbers"], version = "^8.4.0"}
+
+[tool.poetry.group.dev.dependencies]
+black = "^26.1.0"
+isort = "^7.0.0"
+flake8 = "^7.3.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
