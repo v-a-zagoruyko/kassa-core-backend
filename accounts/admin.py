@@ -8,7 +8,7 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
     min_num = 1
     max_num = 1
-    verbose_name_plural = 'Профиль'
+    verbose_name_plural = "Профиль"
     fields = ("phone",)
 
 
@@ -17,7 +17,7 @@ class UserSettingsInline(admin.TabularInline):
     can_delete = False
     min_num = 1
     max_num = 1
-    verbose_name_plural = 'Настройки'
+    verbose_name_plural = "Настройки"
     fields = ("is_order_push_notifications_enabled", "is_promo_push_notifications_enabled", "is_promo_sms_notifications_enabled", "is_promo_email_notifications_enabled",)
 
 
