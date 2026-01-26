@@ -21,9 +21,15 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN groupadd -r app && useradd -r -g app app
+
 COPY pyproject.toml poetry.lock ./
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-root --no-interaction --no-ansi
 
 COPY . .
+
+RUN chown -R app:app /app
+
+USER app

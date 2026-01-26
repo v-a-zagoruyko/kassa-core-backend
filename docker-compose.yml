@@ -7,6 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - ENVIRONMENT=dev
       - DJANGO_SETTINGS_MODULE=kassa_core.settings
       - POSTGRES_DB=kassa_core_db
       - POSTGRES_USER=kassa_core_user
