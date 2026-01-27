@@ -61,3 +61,55 @@ class BaseModel(TimestampMixin, SoftDeleteMixin):
 
     def __str__(self):
         return str(self.id)
+
+
+class Address(models.Model):
+    city = models.CharField(
+        max_length=255,
+        verbose_name="Город",
+        db_index=True,
+    )
+    street = models.CharField(
+        max_length=255,
+        verbose_name="Улица",
+        db_index=True,
+    )
+    house = models.CharField(
+        max_length=50,
+        verbose_name="Дом",
+    )
+    apartment = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Квартира/Офис",
+    )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name="Широта",
+        help_text="Координата для расчета расстояний",
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name="Долгота",
+        help_text="Координата для расчета расстояний",
+    )
+
+    class Meta:
+        verbose_name = "Адрес"
+        verbose_name_plural = "Адреса"
+        indexes = [
+            models.Index(fields=["city", "street"]),
+        ]
+
+    def __str__(self):
+        parts = [self.city, self.street, self.house]
+        if self.apartment:
+            parts.append(f"кв. {self.apartment}")
+        return ", ".join(parts)
