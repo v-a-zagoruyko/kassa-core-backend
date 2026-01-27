@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
-from common.models import BaseModel
+from common.models import BaseModel, Address
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -35,7 +35,7 @@ class UserManager(BaseUserManager):
         return user
 
 
-class User(BaseModel, AbstractUser, PermissionsMixin):
+class User(BaseModel, AbstractUser):
     objects = UserManager()
 
     USERNAME_FIELD = "username"
@@ -105,3 +105,25 @@ class UserSettings(BaseModel):
 
     def __str__(self):
         return f"Настройки пользователя {self.user}"
+
+
+class UserAddress(BaseModel):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="addresses",
+        verbose_name="Пользователь",
+    )
+    address = models.ForeignKey(
+        Address,
+        on_delete=models.CASCADE,
+        related_name="addresses",
+        verbose_name="Адрес",
+    )
+
+    class Meta:
+        verbose_name = "Адрес пользователя"
+        verbose_name_plural = "Адреса пользователей"
+
+    def __str__(self):
+        return f"Адрес пользователя {self.user}"
