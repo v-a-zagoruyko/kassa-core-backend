@@ -5,16 +5,16 @@ from .models import User, UserProfile, UserSettings, UserAddress
 
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
+    min_num = 1
+    max_num = 1
     can_delete = False
     fields = ("phone",)
-    readonly_fields = ("phone",)
-
-    def has_add_permission(self, request, obj=None):
-        return False
 
 
 class UserSettingsInline(admin.StackedInline):
     model = UserSettings
+    min_num = 1
+    max_num = 1
     can_delete = False
     fields = ("is_order_push_notifications_enabled", "is_promo_push_notifications_enabled", "is_promo_sms_notifications_enabled", "is_promo_email_notifications_enabled",)
     readonly_fields = ("is_order_push_notifications_enabled", "is_promo_push_notifications_enabled", "is_promo_sms_notifications_enabled", "is_promo_email_notifications_enabled",)
@@ -26,11 +26,8 @@ class UserSettingsInline(admin.StackedInline):
 class UserAddressInline(admin.StackedInline):
     model = UserAddress
     can_delete = False
+    extra = 1
     fields = ("address",)
-    readonly_fields = ("address",)
-
-    def has_add_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(User)

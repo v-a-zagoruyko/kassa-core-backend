@@ -1,5 +1,12 @@
 from django.contrib import admin
+from common.models import Address
 from .models import Store, StoreWorkingHours, StoreSpecialHours
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ("city", "street", "house", "apartment",)
+    fields = ("city", "street", "house", "apartment", "latitude", "longitude",)
 
 
 class StoreWorkingHoursInline(admin.StackedInline):
