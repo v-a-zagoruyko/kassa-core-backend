@@ -5,6 +5,7 @@ from django.contrib import admin
 
 
 urlpatterns = [
+    path("api/", include("common.api.urls")),
     path("", admin.site.urls),
 ]
 

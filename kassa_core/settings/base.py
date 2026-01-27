@@ -21,10 +21,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "viewflow",
     "simple_history",
     "common",
     "accounts",
+    "stores",
 ]
 
 MIDDLEWARE = [
@@ -136,3 +138,4 @@ USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DADATA_AUTH_TOKEN = env("DADATA_AUTH_TOKEN")
