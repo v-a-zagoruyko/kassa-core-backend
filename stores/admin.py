@@ -30,9 +30,10 @@ class StoreAdmin(admin.ModelAdmin):
     list_display = ("name", "address", "is_active",)
     list_filter = ("is_active",)
     search_fields = ("name", "code",)
+    readonly_fields = ("code",)
     fieldsets = (
         (None, {
-            "fields": ("name", "address", "delivery_radius_km", "is_active",),
+            "fields": ("code", "name", "address", "delivery_radius_km", "is_active",),
         }),
     )
     inlines = (StoreWorkingHoursInline, StoreSpecialHoursInline,)

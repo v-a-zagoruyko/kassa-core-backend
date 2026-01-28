@@ -1,7 +1,10 @@
 import logging
+from typing import Dict, List, Optional
+
 import requests
 from django.conf import settings
-from typing import List, Dict, Optional
+
+from common.exceptions import ConfigurationError, ExternalServiceError
 
 logger = logging.getLogger(__name__)
 
@@ -10,11 +13,12 @@ class DadataService:
     def __init__(self):
         self.auth_token = getattr(settings, "DADATA_AUTH_TOKEN", None)
         self.api_url = "https://suggestions.dadata.ru/"
-        self.timeout = 1 / 20
+        # Более реалистичный таймаут для внешнего HTTP-запроса
+        self.timeout = 1.0
 
         if not self.auth_token:
             logger.error("DADATA_AUTH_TOKEN не установлен в настройках")
-            raise ValueError("DADATA_AUTH_TOKEN не установлен в настройках")
+            raise ConfigurationError("DADATA_AUTH_TOKEN не установлен в настройках")
 
     def _get_headers(self) -> Dict[str, str]:
         headers = {
@@ -55,7 +59,7 @@ class DadataService:
             return []
         except requests.RequestException as e:
             logger.error(f"Ошибка при запросе к Dadata API: {e}")
-            return []
+            raise ExternalServiceError("Ошибка при запросе к Dadata API") from e
         except (ValueError, KeyError) as e:
             logger.error(f"Ошибка при парсинге ответа Dadata API: {e}")
             return []
@@ -66,7 +70,7 @@ class DadataService:
 
         if not self.auth_token:
             logger.error("DADATA_AUTH_TOKEN не установлен в настройках")
-            raise ValueError("DADATA_AUTH_TOKEN не установлен в настройках")
+            raise ConfigurationError("DADATA_AUTH_TOKEN не установлен в настройках")
 
         url = f"{self.api_url.rstrip('/')}/api/v1/clean/address"
 
@@ -90,7 +94,7 @@ class DadataService:
             return None
         except requests.RequestException as e:
             logger.error(f"Ошибка при нормализации адреса: {e}")
-            return None
+            raise ExternalServiceError("Ошибка при нормализации адреса") from e
         except (ValueError, KeyError) as e:
             logger.error(f"Ошибка при парсинге ответа Dadata API: {e}")
             return None

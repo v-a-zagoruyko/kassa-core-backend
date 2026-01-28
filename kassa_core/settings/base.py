@@ -38,6 +38,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    "common.middleware.ApiExceptionMiddleware",
 ]
 
 ROOT_URLCONF = "kassa_core.urls"
@@ -102,7 +103,7 @@ LOGGING = {
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
         "json": {
-            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "()": "pythonjsonlogger.json.JsonFormatter",
             "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d",
         },
     },
@@ -139,3 +140,7 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DADATA_AUTH_TOKEN = env("DADATA_AUTH_TOKEN")
+
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "common.api.exception_handler.custom_exception_handler",
+}
