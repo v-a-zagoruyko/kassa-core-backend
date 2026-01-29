@@ -18,6 +18,42 @@ class TimestampMixin(models.Model):
         abstract = True
 
 
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self):
+        return super().update(is_deleted=True, deleted_at=timezone.now())
+
+    def hard_delete(self):
+        return super().delete()
+
+    def alive(self):
+        return self.filter(is_deleted=False)
+
+    def deleted(self):
+        return self.filter(is_deleted=True)
+
+    def restore(self):
+        return self.update(is_deleted=False, deleted_at=None)
+
+
+class SoftDeleteManager(models.Manager.from_queryset(SoftDeleteQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+    def all_with_deleted(self):
+        return super().get_queryset()
+
+    def only_deleted(self):
+        return self.all_with_deleted().filter(is_deleted=True)
+
+    def hard_delete(self):
+        return self.all_with_deleted().hard_delete()
+
+
+class SoftDeleteAllObjectsManager(models.Manager.from_queryset(SoftDeleteQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset()
+
+
 class SoftDeleteMixin(models.Model):
     deleted_at = models.DateTimeField(
         null=True,
@@ -29,6 +65,9 @@ class SoftDeleteMixin(models.Model):
         verbose_name="Удалено",
         db_index=True,
     )
+
+    objects = SoftDeleteManager()
+    all_objects = SoftDeleteAllObjectsManager()
 
     def delete(self, using=None, keep_parents=False):
         self.is_deleted = True
