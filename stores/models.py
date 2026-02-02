@@ -1,6 +1,7 @@
 from django.db import IntegrityError, models
 from django.core.exceptions import ValidationError
-from slugify import slugify
+from django.core.validators import MinValueValidator
+from autoslug import AutoSlugField
 
 from common.models import Address, BaseModel
 
@@ -10,12 +11,13 @@ class Store(BaseModel):
         max_length=255,
         verbose_name="Название",
     )
-    code = models.SlugField(
+    code = AutoSlugField(
         max_length=255,
         unique=True,
         editable=False,
         db_index=True,
         verbose_name="Код",
+        populate_from="name",
     )
     address = models.ForeignKey(
         Address,
@@ -31,39 +33,14 @@ class Store(BaseModel):
         default=3.0,
         verbose_name="Радиус доставки",
         help_text="Указывается в километрах",
+        validators=[
+            MinValueValidator(0.01, message="Радиус доставки должен быть больше 0"),
+        ],
     )
 
     class Meta:
         verbose_name = "Точка продаж"
         verbose_name_plural = "Точки продаж"
-
-    def _generate_unique_code(self) -> str:
-        """
-        Генерирует уникальный slug-код на основе названия магазина.
-        """
-        base_slug = slugify(self.name)
-        slug = base_slug
-        counter = 1
-
-        # Обеспечиваем уникальность кода среди существующих записей
-        model = type(self)
-        while model.objects.filter(code=slug).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-
-        return slug
-
-    def clean(self) -> None:
-        super().clean()
-        if self.delivery_radius_km is not None and self.delivery_radius_km <= 0:
-            raise ValidationError(
-                {"delivery_radius_km": "Радиус доставки должен быть больше 0"}
-            )
-
-    def save(self, *args, **kwargs):
-        if not self.code:
-            self.code = self._generate_unique_code()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

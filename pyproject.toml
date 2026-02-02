@@ -24,6 +24,7 @@ pytest = "^9.0.2"
 pytest-django = "^4.11.1"
 unidecode = "^1.4.0"
 python-slugify = "^8.0.4"
+django-autoslug = "^1.9.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.1.0"

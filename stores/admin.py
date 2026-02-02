@@ -6,6 +6,7 @@ from django.urls import path, reverse
 
 from common.models import Address
 from .models import Store, StoreWorkingHours, StoreSpecialHours
+from products.models import Stock
 
 
 @admin.register(Address)
@@ -30,6 +31,12 @@ class StoreSpecialHoursInline(admin.StackedInline):
     fields = ("date", "open_time", "close_time",)
 
 
+class StockInline(admin.TabularInline):
+    model = Stock
+    extra = 1
+    fields = ("product", "quantity",)
+
+
 @admin.register(Store)
 class StoreAdmin(admin.ModelAdmin):
     change_form_template = "admin/stores/store/change_form.html"
@@ -42,7 +49,7 @@ class StoreAdmin(admin.ModelAdmin):
             "fields": ("code", "name", "address", "delivery_radius_km", "is_active",),
         }),
     )
-    inlines = (StoreWorkingHoursInline, StoreSpecialHoursInline,)
+    inlines = (StockInline, StoreWorkingHoursInline, StoreSpecialHoursInline,)
 
     class Media:
         js = ("stores/js/store_map_widget.js",)
