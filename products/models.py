@@ -43,7 +43,7 @@ class Category(BaseModel):
     class Meta:
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
-        ordering = ("sort_order", "name")
+        ordering = ("parent__sort_order", "sort_order", "name")
 
     def clean(self) -> None:
         super().clean()
@@ -61,6 +61,7 @@ class Category(BaseModel):
         while parent is not None:
             path.append(parent.name)
             parent = parent.parent
+        path.reverse()
         if path:
             return " / ".join(path) + " / " + self.name
         return self.name

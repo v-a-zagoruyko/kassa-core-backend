@@ -42,6 +42,13 @@ class Store(BaseModel):
         verbose_name = "Точка продаж"
         verbose_name_plural = "Точки продаж"
 
+    def clean(self) -> None:
+        super().clean()
+        if self.delivery_radius_km is not None and self.delivery_radius_km < 0.01:
+            raise ValidationError(
+                {"delivery_radius_km": "Радиус доставки должен быть больше 0"}
+            )
+
     def __str__(self):
         return self.name
 

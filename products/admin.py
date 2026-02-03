@@ -69,7 +69,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "category",)
     search_fields = ("name", "slug",)
     readonly_fields = ("slug",)
-    ordering = ("category__parent__sort_order", "category__sort_order", "sort_order",)
+    ordering = ("category__parent__sort_order", "category__sort_order",)
     fieldsets = (
         (None, {
             "fields": ("name", "slug", "category", "price", "is_active",),
