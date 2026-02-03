@@ -11,7 +11,7 @@ from .models import (
 
 class ProductImageInline(admin.StackedInline):
     model = ProductImage
-    extra = 1
+    extra = 0
     readonly_fields = ("image_preview",)
     fields = ("image_preview", "image", "sort_order",)
 
@@ -28,7 +28,7 @@ class ProductImageInline(admin.StackedInline):
 
 class ProductVideoInline(admin.StackedInline):
     model = ProductVideo
-    extra = 1
+    extra = 0
     readonly_fields = ("file_preview",)
     fields = ("file_preview", "file", "sort_order",)
 
@@ -45,7 +45,7 @@ class ProductVideoInline(admin.StackedInline):
 
 class StockInline(admin.TabularInline):
     model = Stock
-    extra = 1
+    extra = 0
     fields = ("store", "quantity",)
 
 
@@ -58,7 +58,7 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ("parent__sort_order", "sort_order",)
     fieldsets = (
         (None, {
-            "fields": ("name", "slug", "parent", "sort_order", "is_active",),
+            "fields": ("name", "parent", "sort_order", "is_active",),
         }),
     )
 
@@ -72,10 +72,10 @@ class ProductAdmin(admin.ModelAdmin):
     ordering = ("category__parent__sort_order", "category__sort_order",)
     fieldsets = (
         (None, {
-            "fields": ("name", "slug", "category", "price", "is_active",),
+            "fields": ("is_active", "name", "category", "price",),
         }),
         ("Описание", {
             "fields": ("description",),
         }),
     )
-    inlines = (ProductImageInline, ProductVideoInline, StockInline)
+    inlines = (StockInline, ProductImageInline, ProductVideoInline,)

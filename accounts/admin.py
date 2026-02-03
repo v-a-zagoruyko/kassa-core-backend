@@ -26,7 +26,7 @@ class UserSettingsInline(admin.StackedInline):
 class UserAddressInline(admin.StackedInline):
     model = UserAddress
     can_delete = False
-    extra = 1
+    extra = 0
     fields = ("address",)
 
 
