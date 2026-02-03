@@ -7,6 +7,7 @@ from rest_framework import exceptions as drf_exceptions, status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
+from common.api.error_response import build_error_payload
 from common.exceptions import AppError, ConfigurationError, DomainValidationError, ExternalServiceError
 
 logger = logging.getLogger(__name__)
@@ -21,28 +22,6 @@ def _get_request_id_from_context(context: Dict[str, Any]) -> Optional[str]:
     return str(request_id) if request_id else None
 
 
-def _build_error_payload(
-    *,
-    code: str,
-    message: str,
-    status_code: int,
-    request_id: Optional[str] = None,
-    details: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {
-        "error": {
-            "code": code,
-            "message": message,
-            "status": status_code,
-        }
-    }
-    if request_id:
-        payload["error"]["request_id"] = request_id
-    if details is not None:
-        payload["error"]["details"] = details
-    return payload
-
-
 def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Response:
     """
     Централизованный обработчик ошибок DRF, приводящий ответы к единому формату.
@@ -55,7 +34,7 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
         drf_response = drf_exception_handler(exc, context)
         assert drf_response is not None
 
-        payload = _build_error_payload(
+        payload = build_error_payload(
             code="validation_error",
             message="Ошибка валидации данных.",
             status_code=drf_response.status_code,
@@ -67,7 +46,7 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
     # Django ValidationError (например, из model.clean())
     if isinstance(exc, DjangoValidationError):
         details = exc.message_dict if hasattr(exc, "message_dict") else {"non_field_errors": exc.messages}
-        payload = _build_error_payload(
+        payload = build_error_payload(
             code="validation_error",
             message="Ошибка валидации данных.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -78,7 +57,7 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
 
     # HTTP ошибки
     if isinstance(exc, Http404):
-        payload = _build_error_payload(
+        payload = build_error_payload(
             code="not_found",
             message="Ресурс не найден.",
             status_code=status.HTTP_404_NOT_FOUND,
@@ -87,7 +66,7 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
         return Response(payload, status=status.HTTP_404_NOT_FOUND)
 
     if isinstance(exc, PermissionDenied):
-        payload = _build_error_payload(
+        payload = build_error_payload(
             code="permission_denied",
             message="Доступ запрещён.",
             status_code=status.HTTP_403_FORBIDDEN,
@@ -112,7 +91,7 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
 
         logger.error("Application error: %s", exc, extra={"request_id": request_id})
 
-        payload = _build_error_payload(
+        payload = build_error_payload(
             code=code,
             message=str(exc) or "Ошибка приложения.",
             status_code=status_code,
@@ -124,11 +103,10 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
     drf_response = drf_exception_handler(exc, context)
     if drf_response is not None:
         # DRF уже знает статус и тело, просто оборачиваем
-        # Попробуем извлечь код из ответа, если он есть
-        default_code = getattr(getattr(exc, "default_code", None), "__str__", lambda: None)()
-        code = default_code or "error"
+        # Извлекаем код из DRF APIException (default_code — строка)
+        code = getattr(exc, "default_code", None) or "error"
 
-        payload = _build_error_payload(
+        payload = build_error_payload(
             code=code,
             message=str(exc) or "Ошибка запроса.",
             status_code=drf_response.status_code,
@@ -140,7 +118,7 @@ def custom_exception_handler(exc: Exception, context: Dict[str, Any]) -> Respons
     # Непредвиденная ошибка — логируем и возвращаем generic 500
     logger.exception("Unexpected server error", exc_info=exc, extra={"request_id": request_id})
 
-    payload = _build_error_payload(
+    payload = build_error_payload(
         code="server_error",
         message="Внутренняя ошибка сервера.",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

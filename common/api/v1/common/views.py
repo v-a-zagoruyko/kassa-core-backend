@@ -4,7 +4,7 @@ from rest_framework import status
 from common.services.dadata_service import DadataService
 from .serializers import (
     DadataAddressSuggestRequestSerializer,
-    DadataAddressSuggestionSerializer,
+    DadataSuggestionDataOutputSerializer,
 )
 
 
@@ -18,8 +18,9 @@ class DadataAddressSuggestView(APIView):
         count = request_serializer.validated_data.get("count")
         suggestions = service.suggest_addresses(query=query, count=count)
 
-        response_serializer = DadataAddressSuggestionSerializer(
-            suggestions,
+        data_list = [s.get("data", {}) for s in suggestions]
+        response_serializer = DadataSuggestionDataOutputSerializer(
+            data_list,
             many=True,
         )
         return Response(response_serializer.data, status=status.HTTP_200_OK)

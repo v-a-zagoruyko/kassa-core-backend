@@ -13,8 +13,7 @@ class DadataService:
     def __init__(self):
         self.auth_token = getattr(settings, "DADATA_AUTH_TOKEN", None)
         self.api_url = "https://suggestions.dadata.ru/"
-        # Более реалистичный таймаут для внешнего HTTP-запроса
-        self.timeout = 1.0
+        self.timeout = getattr(settings, "DADATA_REQUEST_TIMEOUT", 5.0)
 
         if not self.auth_token:
             logger.error("DADATA_AUTH_TOKEN не установлен в настройках")

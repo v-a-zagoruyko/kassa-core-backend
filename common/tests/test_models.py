@@ -38,9 +38,7 @@ def test_hard_delete_removes_object():
     user_id = user.id
     user.hard_delete()
 
-    from accounts.models import User as UserModel
-
-    assert not UserModel.objects.filter(id=user_id).exists()
+    assert not User.objects.filter(id=user_id).exists()
 
 
 @pytest.mark.django_db

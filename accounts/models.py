@@ -5,6 +5,9 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 
 class UserManager(BaseUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
     def create_user(self, username, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)

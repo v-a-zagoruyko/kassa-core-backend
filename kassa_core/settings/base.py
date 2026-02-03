@@ -141,6 +141,7 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DADATA_AUTH_TOKEN = env("DADATA_AUTH_TOKEN")
+DADATA_REQUEST_TIMEOUT = env.float("DADATA_REQUEST_TIMEOUT", default=5.0)
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "common.api.exception_handler.custom_exception_handler",

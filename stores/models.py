@@ -1,9 +1,9 @@
-from django.db import IntegrityError, models
+from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from autoslug import AutoSlugField
 
-from common.models import Address, BaseModel
+from common.models import Address, BaseModel, UniqueConstraintCheckMixin
 
 
 class Store(BaseModel):
@@ -53,7 +53,7 @@ class Store(BaseModel):
         return self.name
 
 
-class StoreWorkingHours(models.Model):
+class StoreWorkingHours(UniqueConstraintCheckMixin, models.Model):
     DAYS_OF_WEEK = [
         (0, "Понедельник"),
         (1, "Вторник"),
@@ -100,31 +100,17 @@ class StoreWorkingHours(models.Model):
             )
 
     def save(self, *args, **kwargs):
-        """
-        Гарантируем выброс IntegrityError при нарушении уникальности (store, day_of_week).
-
-        Это делает поведение явным даже в ситуации, когда миграции с
-        UniqueConstraint ещё не накатаны на БД.
-        """
-        if self.store_id is not None and self.day_of_week is not None:
-            qs = type(self).objects.filter(
-                store_id=self.store_id,
-                day_of_week=self.day_of_week,
-            )
-            if self.pk:
-                qs = qs.exclude(pk=self.pk)
-            if qs.exists():
-                raise IntegrityError(
-                    "StoreWorkingHours with this store and day_of_week already exists."
-                )
-
+        self._check_unique_constraint(
+            ("store", "day_of_week"),
+            "StoreWorkingHours with this store and day_of_week already exists.",
+        )
         return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.store.name} - {self.get_day_of_week_display()}"
 
 
-class StoreSpecialHours(models.Model):
+class StoreSpecialHours(UniqueConstraintCheckMixin, models.Model):
     store = models.ForeignKey(
         Store,
         on_delete=models.CASCADE,
@@ -160,22 +146,10 @@ class StoreSpecialHours(models.Model):
             )
 
     def save(self, *args, **kwargs):
-        """
-        Аналогично StoreWorkingHours обеспечиваем выброс IntegrityError
-        при попытке создать дубликат по паре (store, date).
-        """
-        if self.store_id is not None and self.date is not None:
-            qs = type(self).objects.filter(
-                store_id=self.store_id,
-                date=self.date,
-            )
-            if self.pk:
-                qs = qs.exclude(pk=self.pk)
-            if qs.exists():
-                raise IntegrityError(
-                    "StoreSpecialHours with this store and date already exists."
-                )
-
+        self._check_unique_constraint(
+            ("store", "date"),
+            "StoreSpecialHours with this store and date already exists.",
+        )
         return super().save(*args, **kwargs)
 
     def __str__(self):

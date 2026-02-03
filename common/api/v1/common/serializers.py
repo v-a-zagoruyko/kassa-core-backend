@@ -28,19 +28,12 @@ class DadataAddressSuggestRequestSerializer(serializers.Serializer):
     count = serializers.IntegerField(min_value=1, max_value=20, default=10, required=False)
 
 
-class DadataAddressSuggestionSerializer(serializers.Serializer):
-    """Один элемент подсказки адреса Dadata для ответа API (поля из data)."""
-
-    city = serializers.CharField(source="data.city", allow_null=True, required=False)
-    street = serializers.CharField(source="data.street", allow_null=True, required=False)
-    house = serializers.CharField(source="data.house", allow_null=True, required=False)
-    apartment = serializers.CharField(source="data.flat", allow_null=True, required=False)
-    latitude = serializers.FloatField(source="data.geo_lat", allow_null=True, required=False)
-    longitude = serializers.FloatField(source="data.geo_lon", allow_null=True, required=False)
-
-
 class DadataSuggestionDataOutputSerializer(serializers.Serializer):
-    """Вложенные данные одного элемента подсказки Dadata (для вывода в виджет)."""
+    """
+    Канонический формат данных одного элемента подсказки Dadata (поля city, street, house, apartment, latitude, longitude).
+    Используется в API и в админ-виджете (через DadataSuggestionNormalizerSerializer).
+    Вход: словарь из Dadata с ключами flat, geo_lat, geo_lon и т.д. (вложенный data).
+    """
 
     city = serializers.CharField(allow_blank=True, allow_null=True, default=None)
     street = serializers.CharField(allow_blank=True, allow_null=True, default=None)
@@ -54,7 +47,7 @@ class DadataSuggestionNormalizerSerializer(serializers.Serializer):
     """Нормализует один элемент ответа Dadata suggest в формат для виджета адреса."""
 
     value = serializers.CharField(default="")
-    data = DadataSuggestionDataOutputSerializer(source="data", default=None)
+    data = DadataSuggestionDataOutputSerializer(default=None)
 
 
 class AddressFromDadataSerializer(serializers.Serializer):

@@ -1,5 +1,5 @@
 import uuid
-from django.db import models
+from django.db import IntegrityError, models
 from django.utils import timezone
 
 
@@ -100,6 +100,30 @@ class BaseModel(TimestampMixin, SoftDeleteMixin):
 
     def __str__(self):
         return str(self.id)
+
+
+class UniqueConstraintCheckMixin:
+    """
+    Миксин для проверки уникальности по полям до сохранения в БД.
+    Вызывает IntegrityError при дубликате (поведение явно даже до наката миграций с UniqueConstraint).
+    """
+
+    def _check_unique_constraint(
+        self,
+        field_names: tuple,
+        exception_message: str,
+    ) -> None:
+        values = {}
+        for fn in field_names:
+            val = getattr(self, fn, None) or getattr(self, f"{fn}_id", None)
+            if val is None:
+                return
+            values[fn] = val
+        qs = type(self).objects.filter(**values)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        if qs.exists():
+            raise IntegrityError(exception_message)
 
 
 class Address(models.Model):

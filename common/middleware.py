@@ -4,6 +4,8 @@ import uuid
 
 from django.http import JsonResponse
 
+from common.api.error_response import build_error_payload
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,14 +39,12 @@ class ApiExceptionMiddleware:
         except Exception as exc:  # noqa: BLE001
             if request.path.startswith("/api/"):
                 logger.exception("Unhandled API exception", extra={"request_id": request_id})
-                payload = {
-                    "error": {
-                        "code": "server_error",
-                        "message": "Внутренняя ошибка сервера.",
-                        "status": 500,
-                        "request_id": request_id,
-                    }
-                }
+                payload = build_error_payload(
+                    code="server_error",
+                    message="Внутренняя ошибка сервера.",
+                    status_code=500,
+                    request_id=request_id,
+                )
                 response = ApiJsonResponse(payload, status=500)
                 # Для ошибочного ответа по API также добавляем X-Request-ID
                 response["X-Request-ID"] = request_id

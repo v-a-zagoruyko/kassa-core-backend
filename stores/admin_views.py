@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.http import HttpRequest, JsonResponse
 
@@ -8,6 +9,8 @@ from common.api.v1.common.serializers import (
 )
 from common.models import Address
 from common.services.dadata_service import DadataService
+
+logger = logging.getLogger(__name__)
 
 
 def address_coordinates_view(request: HttpRequest, address_id: int) -> JsonResponse:
@@ -26,12 +29,16 @@ def dadata_address_suggest_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": "method_not_allowed"}, status=405)
     query = (request.GET.get("query") or "").strip()
     if len(query) < 2:
-        return JsonResponse([])
+        return JsonResponse([], safe=False)
     try:
         service = DadataService()
         suggestions = service.suggest_addresses(query=query, count=10)
-    except Exception:
-        return JsonResponse([])
+    except Exception as e:
+        logger.exception("Ошибка при запросе подсказок Dadata: %s", e)
+        return JsonResponse(
+            {"error": "suggest_failed", "message": "Сервис подсказок адресов временно недоступен."},
+            status=502,
+        )
     result = [
         DadataSuggestionNormalizerSerializer(instance=s).data
         for s in suggestions
