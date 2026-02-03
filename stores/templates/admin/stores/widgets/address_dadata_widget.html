@@ -1,0 +1,24 @@
+{% load i18n %}
+<div class="address-dadata-widget" style="position:relative">
+<input type="hidden" name="{{ widget.name }}" value="{{ widget.value|default:'' }}" id="{{ widget.attrs.id }}"
+       data-suggest-url="{{ widget.suggest_url }}"
+       data-create-url="{{ widget.create_url }}">
+<input type="text" class="address-dadata-search" id="{{ widget.attrs.id }}_search"
+       placeholder="{% trans 'Введите адрес и выберите из подсказок' %}"
+       autocomplete="off"
+       value="">
+<div id="{{ widget.attrs.id }}_dropdown" class="address-dadata-dropdown" role="listbox" aria-hidden="true"></div>
+<div id="{{ widget.attrs.id }}_display" class="address-dadata-readonly" {% if not widget.address_display %}style="display:none"{% endif %}>
+  {% if widget.address_display %}
+  <p class="address-dadata-line"><strong>{% trans "Город" %}:</strong> <span class="addr-city">{{ widget.address_display.city }}</span></p>
+  <p class="address-dadata-line"><strong>{% trans "Улица" %}:</strong> <span class="addr-street">{{ widget.address_display.street }}</span></p>
+  <p class="address-dadata-line"><strong>{% trans "Дом" %}:</strong> <span class="addr-house">{{ widget.address_display.house }}</span></p>
+  <p class="address-dadata-line"><strong>{% trans "Квартира/Офис" %}:</strong> <span class="addr-apartment">{{ widget.address_display.apartment }}</span></p>
+  {% else %}
+  <p class="address-dadata-line"><strong>{% trans "Город" %}:</strong> <span class="addr-city"></span></p>
+  <p class="address-dadata-line"><strong>{% trans "Улица" %}:</strong> <span class="addr-street"></span></p>
+  <p class="address-dadata-line"><strong>{% trans "Дом" %}:</strong> <span class="addr-house"></span></p>
+  <p class="address-dadata-line"><strong>{% trans "Квартира/Офис" %}:</strong> <span class="addr-apartment"></span></p>
+  {% endif %}
+</div>
+</div>
