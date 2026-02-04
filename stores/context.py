@@ -1,11 +1,8 @@
-"""Функции для формирования контекста шаблонов (админка Store: карта, адрес)."""
+"""Контекст для виджета карты в форме Store (админка)."""
 
-import logging
 from typing import Any, Dict, Optional
 
 from django.urls import NoReverseMatch, reverse
-
-logger = logging.getLogger(__name__)
 
 
 def get_store_map_context(store_obj: Any, admin_site: Optional[Any] = None) -> Dict[str, str]:
@@ -40,8 +37,5 @@ def get_store_map_context(store_obj: Any, admin_site: Optional[Any] = None) -> D
             current_app=admin_site.name if admin_site else None,
         )
     except NoReverseMatch:
-        ctx["address_coordinates_url"] = ""
-    except Exception as e:
-        logger.warning("Не удалось построить address_coordinates_url: %s", e, exc_info=True)
         ctx["address_coordinates_url"] = ""
     return ctx

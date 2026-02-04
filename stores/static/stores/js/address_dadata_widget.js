@@ -24,8 +24,23 @@
     var createUrl = hidden.getAttribute("data-create-url");
     if (!suggestUrl || !createUrl) return;
 
+    var errorBlock = container.querySelector(".address-dadata-error");
     var debounceTimer = null;
     var currentSuggestions = [];
+
+    function showError(message) {
+      if (errorBlock) {
+        errorBlock.textContent = message;
+        errorBlock.style.display = "block";
+      }
+    }
+
+    function clearError() {
+      if (errorBlock) {
+        errorBlock.textContent = "";
+        errorBlock.style.display = "none";
+      }
+    }
 
     function setAddressDisplay(data) {
       displayBlock.querySelector(".addr-city").textContent = data.city || "";
@@ -74,6 +89,7 @@
     }
 
     function createAddressFromSuggestion(data, callback) {
+      clearError();
       fetch(createUrl, {
         method: "POST",
         credentials: "same-origin",
@@ -86,11 +102,29 @@
         body: JSON.stringify(data),
       })
         .then(function (resp) {
-          if (!resp.ok) throw new Error("HTTP " + resp.status);
-          return resp.json();
+          return resp.json().then(function (body) {
+            if (resp.ok) {
+              callback(body);
+              return;
+            }
+            if (body.error === "validation_error" && body.details) {
+              var parts = [];
+              if (typeof body.details === "object") {
+                Object.keys(body.details).forEach(function (key) {
+                  var msgs = body.details[key];
+                  if (Array.isArray(msgs)) parts.push(msgs.join(" "));
+                  else parts.push(String(msgs));
+                });
+              }
+              showError(parts.length ? parts.join(" ") : "Заполните улицу и дом.");
+            } else {
+              showError(body.message || body.error || "Не удалось сохранить адрес.");
+            }
+            callback(null);
+          });
         })
-        .then(callback)
         .catch(function () {
+          showError("Ошибка сети. Повторите попытку.");
           callback(null);
         });
     }
@@ -132,6 +166,7 @@
         },
         function (result) {
           if (result && result.address_id) {
+            clearError();
             hidden.value = result.address_id;
             if (hidden.dispatchEvent) {
               hidden.dispatchEvent(new Event("change", { bubbles: true }));

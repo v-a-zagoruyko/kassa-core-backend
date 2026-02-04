@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_CENTER = [56.8389, 60.6057]; // Екатеринбург
+  var DEFAULT_CENTER = [57.1531, 65.5343]; // Тюмень
   var DEFAULT_ZOOM = 11;
 
   function parseNum(s, def) {

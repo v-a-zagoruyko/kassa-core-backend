@@ -10,7 +10,6 @@ from common.exceptions import ConfigurationError
 from common.middleware import ApiExceptionMiddleware
 
 
-@pytest.mark.django_db
 def test_custom_exception_handler_drf_validation_error_wraps_response():
     factory = RequestFactory()
     django_request = factory.post("/api/test/", data={})

@@ -1,4 +1,4 @@
-"""Тесты админ-views виджета адреса (Dadata подсказки, координаты, создание адреса)."""
+"""Тесты админ-views виджета адреса: Dadata suggest, координаты, создание адреса."""
 
 import json
 from unittest.mock import patch
@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from django.test import RequestFactory
 
+from common.models import Address
 from stores import admin_views
 
 
@@ -79,6 +80,66 @@ class TestDadataAddressSuggestView:
     def test_post_returns_405(self, request_factory):
         request = request_factory.post("/admin/stores/store/dadata-suggest/", {"query": "москва"})
         response = admin_views.dadata_address_suggest_view(request)
+        assert response.status_code == 405
+        data = json.loads(response.content)
+        assert data["error"] == "method_not_allowed"
+
+
+@pytest.mark.django_db
+class TestCreateAddressFromDadataView:
+    def test_post_valid_body_creates_address_and_returns_address_id(self, request_factory):
+        body = {
+            "city": "Москва",
+            "street": "Грибоедова",
+            "house": "1",
+            "apartment": "5",
+            "latitude": 55.75,
+            "longitude": 37.62,
+        }
+        request = request_factory.post(
+            "/admin/stores/store/create-address-from-dadata/",
+            data=json.dumps(body),
+            content_type="application/json",
+        )
+        response = admin_views.create_address_from_dadata_view(request)
+
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert "address_id" in data
+        address = Address.objects.get(pk=data["address_id"])
+        assert address.city == body["city"]
+        assert address.street == body["street"]
+        assert address.house == body["house"]
+        assert address.apartment == body["apartment"]
+        assert float(address.latitude) == body["latitude"]
+        assert float(address.longitude) == body["longitude"]
+
+    def test_post_invalid_json_returns_400(self, request_factory):
+        request = request_factory.post(
+            "/admin/stores/store/create-address-from-dadata/",
+            data="not json",
+            content_type="application/json",
+        )
+        response = admin_views.create_address_from_dadata_view(request)
+        assert response.status_code == 400
+        data = json.loads(response.content)
+        assert data["error"] == "invalid_json"
+
+    def test_post_validation_error_returns_400(self, request_factory):
+        request = request_factory.post(
+            "/admin/stores/store/create-address-from-dadata/",
+            data=json.dumps({"city": "Москва"}),  # нет street, house
+            content_type="application/json",
+        )
+        response = admin_views.create_address_from_dadata_view(request)
+        assert response.status_code == 400
+        data = json.loads(response.content)
+        assert data["error"] == "validation_error"
+        assert "details" in data
+
+    def test_get_returns_405(self, request_factory):
+        request = request_factory.get("/admin/stores/store/create-address-from-dadata/")
+        response = admin_views.create_address_from_dadata_view(request)
         assert response.status_code == 405
         data = json.loads(response.content)
         assert data["error"] == "method_not_allowed"

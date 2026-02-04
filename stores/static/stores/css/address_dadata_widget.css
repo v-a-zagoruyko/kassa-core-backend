@@ -1,5 +1,6 @@
 .address-dadata-widget {
   position: relative;
+  min-height: 300px;
 }
 
 .address-dadata-search {
@@ -47,4 +48,14 @@
 
 .address-dadata-line {
   margin: 4px 0;
+}
+
+.address-dadata-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  color: #ba2121;
+  background: #fff3f3;
+  border: 1px solid #e0b4b4;
+  border-radius: 4px;
+  font-size: 13px;
 }

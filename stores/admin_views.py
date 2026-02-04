@@ -27,7 +27,7 @@ def address_coordinates_view(request: HttpRequest, address_id: int) -> JsonRespo
 def dadata_address_suggest_view(request: HttpRequest) -> JsonResponse:
     if request.method != "GET":
         return JsonResponse({"error": "method_not_allowed"}, status=405)
-    query = (request.GET.get("query") or "").strip()
+    query = request.GET.get("query", "").strip()
     if len(query) < 2:
         return JsonResponse([], safe=False)
     try:
