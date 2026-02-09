@@ -1,13 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
-from common.models import BaseModel, Address
+from common.models import Address, BaseModel
 from phonenumber_field.modelfields import PhoneNumberField
 
 
 class UserManager(BaseUserManager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
-
     def create_user(self, username, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
@@ -130,3 +127,36 @@ class UserAddress(BaseModel):
 
     def __str__(self):
         return f"Адрес пользователя {self.user}"
+
+
+class PhoneVerificationCode(BaseModel):
+    phone = PhoneNumberField(
+        region="RU",
+        verbose_name="Телефон",
+        db_index=True,
+    )
+    code = models.CharField(
+        max_length=6,
+        verbose_name="Код подтверждения",
+    )
+    expires_at = models.DateTimeField(
+        verbose_name="Время истечения кода",
+    )
+    attempts = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Количество попыток проверки",
+    )
+    is_used = models.BooleanField(
+        default=False,
+        verbose_name="Код использован",
+    )
+
+    class Meta:
+        verbose_name = "Код подтверждения телефона"
+        verbose_name_plural = "Коды подтверждения телефона"
+        indexes = [
+            models.Index(fields=["phone", "is_used", "expires_at"]),
+        ]
+
+    def __str__(self):
+        return f"Код для {self.phone}"

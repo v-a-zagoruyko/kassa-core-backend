@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 import environ
 from pathlib import Path
 
@@ -144,5 +145,14 @@ DADATA_AUTH_TOKEN = env("DADATA_AUTH_TOKEN")
 DADATA_REQUEST_TIMEOUT = env.float("DADATA_REQUEST_TIMEOUT", default=5.0)
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
     "EXCEPTION_HANDLER": "common.api.exception_handler.custom_exception_handler",
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
