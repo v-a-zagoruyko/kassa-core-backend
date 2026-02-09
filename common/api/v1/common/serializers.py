@@ -63,5 +63,12 @@ class AddressFromDadataSerializer(serializers.Serializer):
     street = serializers.CharField(max_length=255, trim_whitespace=True)
     house = serializers.CharField(max_length=50, trim_whitespace=True)
     apartment = serializers.CharField(max_length=50, allow_blank=True, allow_null=True, default=None, trim_whitespace=True)
+    comment = serializers.CharField(
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        default=None,
+        trim_whitespace=True,
+    )
     latitude = NullableGeoFloatField(allow_null=True, required=False, default=None)
     longitude = NullableGeoFloatField(allow_null=True, required=False, default=None)

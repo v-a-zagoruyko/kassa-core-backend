@@ -147,6 +147,12 @@ class Address(models.Model):
         null=True,
         verbose_name="Квартира/Офис",
     )
+    comment = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Комментарий",
+        help_text="Дополнительная информация к адресу",
+    )
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
