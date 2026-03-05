@@ -6,6 +6,7 @@ from .models import (
     ProductImage,
     ProductVideo,
     Stock,
+    Barcode,
 )
 
 
@@ -49,6 +50,13 @@ class StockInline(admin.TabularInline):
     fields = ("store", "quantity",)
 
 
+class BarcodeInline(admin.TabularInline):
+    model = Barcode
+    extra = 1
+    fields = ("code", "barcode_type", "is_primary",)
+    readonly_fields = ()
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("__str__", "sort_order", "is_active",)
@@ -78,4 +86,44 @@ class ProductAdmin(admin.ModelAdmin):
             "fields": ("description",),
         }),
     )
-    inlines = (StockInline, ProductImageInline, ProductVideoInline,)
+    inlines = (BarcodeInline, StockInline, ProductImageInline, ProductVideoInline,)
+
+
+@admin.register(Barcode)
+class BarcodeAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "product",
+        "barcode_type",
+        "is_primary",
+        "created_at",
+    )
+    list_filter = (
+        "barcode_type",
+        "is_primary",
+        "created_at",
+    )
+    search_fields = (
+        "code",
+        "product__name",
+    )
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+    fieldsets = (
+        (None, {
+            "fields": ("product", "code", "barcode_type", "is_primary"),
+        }),
+        ("Информация", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+    ordering = ("-is_primary", "-created_at")
+
+    def get_readonly_fields(self, request, obj=None):
+        """При редактировании кода нельзя изменять."""
+        if obj:  # Редактирование существующего объекта
+            return self.readonly_fields + ("code",)
+        return self.readonly_fields
