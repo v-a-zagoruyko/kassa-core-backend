@@ -286,7 +286,7 @@ class Barcode(BaseModel):
                     }
                 )
             # Проверка контрольной суммы EAN-13
-            if not self._validate_ean13_checksum():
+            if not self._validate_ean13_checksum(self.code):
                 raise ValidationError(
                     {
                         "code": "Неверная контрольная сумма EAN-13. "
