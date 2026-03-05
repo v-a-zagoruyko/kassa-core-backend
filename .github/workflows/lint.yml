@@ -1,13 +1,10 @@
 name: Lint & Type Check
 
 on:
-  push:
-    branches:
-      - 'feature/**'
-      - 'main'
   pull_request:
     branches:
       - 'main'
+      - 'develop'
 
 permissions:
   contents: read
