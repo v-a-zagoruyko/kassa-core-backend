@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to test/staging
+        run: |
+          echo "📦 Deploy workflow placeholder"
+          echo "This workflow is ready to be configured for:"
+          echo "  - Deploying to test environment"
+          echo "  - Deploying to staging environment"
+          echo "  - Running migrations"
+          echo "  - Health checks"
+          echo ""
+          echo "Configuration needed:"
+          echo "  - Add deployment secrets (API tokens, SSH keys, etc.)"
+          echo "  - Configure target servers"
+          echo "  - Set up deployment credentials"
+        continue-on-error: true
+
+      # Example: Deploy to staging (uncomment and configure when ready)
+      #
+      # - name: Deploy to staging via SSH
+      #   uses: appleboy/ssh-action@master
+      #   with:
+      #     host: ${{ secrets.STAGING_HOST }}
+      #     username: ${{ secrets.STAGING_USER }}
+      #     key: ${{ secrets.STAGING_SSH_KEY }}
+      #     script: |
+      #       cd /app/kassa-core-backend
+      #       git pull origin main
+      #       poetry install
+      #       poetry run python manage.py migrate
+      #       poetry run python manage.py collectstatic --noinput
+      #       systemctl restart kassa-backend
+      #
+      # - name: Run smoke tests
+      #   run: |
+      #     curl -f https://staging-api.example.com/api/v1/health/ || exit 1
+
+      - name: Deployment complete
+        run: echo "✅ Deploy workflow structure ready (configuration pending)"

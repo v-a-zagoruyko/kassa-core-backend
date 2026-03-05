@@ -1,0 +1,116 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'develop'
+      - 'feature/**'
+  pull_request:
+    branches:
+      - 'main'
+      - 'develop'
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test_kassa_core
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U test_user; do
+            echo "Waiting for postgres..."
+            sleep 1
+          done
+
+      - name: Run migrations
+        env:
+          DJANGO_SETTINGS_MODULE: kassa_core.settings
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_kassa_core
+          DJANGO_SECRET_KEY: test-secret-key-ci
+          DJANGO_DEBUG: 'false'
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+        run: poetry run python manage.py migrate
+
+      - name: Run pytest with coverage
+        env:
+          DJANGO_SETTINGS_MODULE: kassa_core.settings
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_kassa_core
+          DJANGO_SECRET_KEY: test-secret-key-ci
+          DJANGO_DEBUG: 'false'
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+        run: |
+          poetry run pytest \
+            --verbose \
+            --tb=short \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-report=html \
+            --cov-fail-under=50
+
+      - name: Upload coverage reports
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Archive coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.python-version }}
+          path: htmlcov/
+        continue-on-error: true
