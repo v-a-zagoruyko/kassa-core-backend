@@ -26,6 +26,7 @@ RUN groupadd -r app && useradd -r -g app app
 COPY pyproject.toml poetry.lock ./
 
 RUN poetry config virtualenvs.create false \
+    && poetry lock --no-interaction \
     && poetry install --no-root --no-interaction --no-ansi
 
 COPY . .
