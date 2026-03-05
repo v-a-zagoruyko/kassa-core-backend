@@ -222,7 +222,17 @@ class TestBarcodeAPI:
     @pytest.fixture
     def store(self):
         from stores.models import Store
-        return Store.objects.create(name="Тестовая точка продаж")
+        from common.models import Address
+        
+        address = Address.objects.create(
+            city="Тюмень",
+            street="Ленина",
+            house="1",
+        )
+        return Store.objects.create(
+            name="Тестовая точка продаж",
+            address=address
+        )
 
     @pytest.fixture
     def stock(self, product, store):

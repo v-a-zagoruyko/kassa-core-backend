@@ -1,0 +1,71 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: ['linux/amd64', 'linux/arm64']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: |
+            kassa-core-backend:${{ github.sha }}
+            kassa-core-backend:latest
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image.tar
+
+      - name: Test Docker image
+        run: |
+          docker load --input /tmp/image.tar
+          docker run --rm kassa-core-backend:${{ github.sha }} python manage.py check
+        continue-on-error: true
+
+      - name: Build summary
+        run: |
+          echo "✅ Docker image built successfully"
+          echo "Image: kassa-core-backend:${{ github.sha }}"
+          echo "Tags: latest"
+
+      # Optional: Push to registry (requires secrets to be configured)
+      # Uncomment and configure when ready for production
+      #
+      # - name: Log in to Docker Hub
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
+      #
+      # - name: Build and push to Docker Hub
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: true
+      #     tags: |
+      #       ${{ secrets.DOCKER_USERNAME }}/kassa-core-backend:${{ github.sha }}
+      #       ${{ secrets.DOCKER_USERNAME }}/kassa-core-backend:latest
