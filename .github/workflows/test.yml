@@ -80,6 +80,9 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: kassa_core.settings
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_kassa_core
+          POSTGRES_DB: test_kassa_core
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
           DJANGO_SECRET_KEY: test-secret-key-ci
           DJANGO_DEBUG: 'false'
           DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
@@ -89,6 +92,9 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: kassa_core.settings
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_kassa_core
+          POSTGRES_DB: test_kassa_core
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
           DJANGO_SECRET_KEY: test-secret-key-ci
           DJANGO_DEBUG: 'false'
           DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
