@@ -43,6 +43,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
 
+      - name: Update poetry.lock
+        run: poetry lock --no-interaction
+
       - name: Install dependencies
         run: poetry install
 
