@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "accounts",
     "stores",
     "products",
+    "orders",
 ]
 
 MIDDLEWARE = [
@@ -63,6 +64,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "kassa_core.wsgi.application"
 
 AUTH_USER_MODEL = "accounts.User"
+
+AUTOSLUG_SLUGIFY_FUNCTION = "django.template.defaultfilters.slugify"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
