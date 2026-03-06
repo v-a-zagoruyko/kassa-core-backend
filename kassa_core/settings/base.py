@@ -156,3 +156,5 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+AUTOSLUG_SLUGIFY_FUNCTION = 'django.template.defaultfilters.slugify'
