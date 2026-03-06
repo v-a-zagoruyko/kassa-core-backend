@@ -154,3 +154,79 @@ class StoreSpecialHours(UniqueConstraintCheckMixin, models.Model):
 
     def __str__(self):
         return f"{self.store.name} - {self.date}"
+
+
+class Kiosk(BaseModel):
+    store = models.ForeignKey(
+        Store,
+        on_delete=models.PROTECT,
+        related_name="kiosks",
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Название",
+    )
+    serial_number = models.CharField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        default="",
+        verbose_name="Серийный номер",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name="Активна",
+    )
+
+    class Meta:
+        verbose_name = "Касса"
+        verbose_name_plural = "Кассы"
+        indexes = [
+            models.Index(fields=["store", "is_active"]),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class StoreSettings(models.Model):
+    VALUE_TYPE_CHOICES = [
+        ("string", "Строка"),
+        ("number", "Число"),
+        ("boolean", "Булево"),
+        ("json", "JSON"),
+    ]
+
+    store = models.ForeignKey(
+        Store,
+        on_delete=models.CASCADE,
+        related_name="store_settings",
+        verbose_name="Точка продаж",
+    )
+    key = models.CharField(
+        max_length=100,
+        verbose_name="Ключ",
+    )
+    value = models.TextField(
+        verbose_name="Значение",
+    )
+    value_type = models.CharField(
+        max_length=10,
+        choices=VALUE_TYPE_CHOICES,
+        default="string",
+        verbose_name="Тип значения",
+    )
+
+    class Meta:
+        verbose_name = "Настройка точки продаж"
+        verbose_name_plural = "Настройки точки продаж"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["store", "key"],
+                name="uniq_store_key",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.store.name} — {self.key}"

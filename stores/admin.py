@@ -5,7 +5,7 @@ from django.urls import path
 
 from . import admin_views
 from .forms import StoreAdminForm
-from .models import Store, StoreWorkingHours, StoreSpecialHours
+from .models import Store, StoreWorkingHours, StoreSpecialHours, Kiosk, StoreSettings
 from .context import get_store_map_context
 from products.models import Stock
 
@@ -26,6 +26,12 @@ class StoreSpecialHoursInline(admin.StackedInline):
     fields = ("date", "open_time", "close_time",)
 
 
+class KioskInline(admin.TabularInline):
+    model = Kiosk
+    extra = 0
+    fields = ("name", "serial_number", "is_active",)
+
+
 class StockInline(admin.TabularInline):
     model = Stock
     extra = 0
@@ -44,7 +50,7 @@ class StoreAdmin(admin.ModelAdmin):
             "fields": ("is_active", "name", "address", "delivery_radius_km",),
         }),
     )
-    inlines = (StockInline, StoreWorkingHoursInline, StoreSpecialHoursInline,)
+    inlines = (KioskInline, StockInline, StoreWorkingHoursInline, StoreSpecialHoursInline,)
 
     class Media:
         css = {"all": ("stores/css/address_dadata_widget.css",)}
@@ -82,3 +88,11 @@ class StoreAdmin(admin.ModelAdmin):
     def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
         context["store_map_context"] = get_store_map_context(obj, admin_site=self.admin_site)
         return super().render_change_form(request, context, add=add, change=change, form_url=form_url, obj=obj)
+
+
+@admin.register(Kiosk)
+class KioskAdmin(admin.ModelAdmin):
+    list_display = ("name", "store", "is_active",)
+    list_filter = ("is_active", "store",)
+    search_fields = ("name", "serial_number",)
+    raw_id_fields = ("store",)

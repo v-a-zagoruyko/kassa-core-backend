@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from common.models import Address
-from stores.models import Store, StoreSpecialHours, StoreWorkingHours
+from stores.models import Store, StoreSpecialHours, StoreWorkingHours, Kiosk, StoreSettings
 
 
 @pytest.mark.django_db
@@ -164,3 +164,91 @@ def test_store_special_hours_unique_constraint():
             close_time=datetime.time(19, 0),
         )
 
+
+@pytest.mark.django_db
+def test_kiosk_create():
+    address = Address.objects.create(
+        city="Екатеринбург",
+        street="Ленина",
+        house="10",
+    )
+    store = Store.objects.create(
+        name="Магазин Kiosk",
+        address=address,
+    )
+    kiosk = Kiosk.objects.create(
+        store=store,
+        name="Касса 1",
+    )
+
+    assert str(kiosk) == "Касса 1"
+
+
+@pytest.mark.django_db
+def test_kiosk_serial_number_unique():
+    address = Address.objects.create(
+        city="Екатеринбург",
+        street="Ленина",
+        house="10",
+    )
+    store = Store.objects.create(
+        name="Магазин Kiosk 2",
+        address=address,
+    )
+    Kiosk.objects.create(
+        store=store,
+        name="Касса А",
+        serial_number="SN-001",
+    )
+
+    with pytest.raises(IntegrityError):
+        Kiosk.objects.create(
+            store=store,
+            name="Касса Б",
+            serial_number="SN-001",
+        )
+
+
+@pytest.mark.django_db
+def test_store_settings_create():
+    address = Address.objects.create(
+        city="Екатеринбург",
+        street="Ленина",
+        house="10",
+    )
+    store = Store.objects.create(
+        name="Магазин Settings",
+        address=address,
+    )
+    setting = StoreSettings.objects.create(
+        store=store,
+        key="theme",
+        value="dark",
+    )
+
+    assert str(setting) == f"{store.name} — theme"
+
+
+@pytest.mark.django_db
+def test_store_settings_unique_store_key():
+    address = Address.objects.create(
+        city="Екатеринбург",
+        street="Ленина",
+        house="10",
+    )
+    store = Store.objects.create(
+        name="Магазин Settings 2",
+        address=address,
+    )
+    StoreSettings.objects.create(
+        store=store,
+        key="language",
+        value="ru",
+    )
+
+    with pytest.raises(IntegrityError):
+        StoreSettings.objects.create(
+            store=store,
+            key="language",
+            value="en",
+        )
