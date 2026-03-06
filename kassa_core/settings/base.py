@@ -157,4 +157,3 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-AUTOSLUG_SLUGIFY_FUNCTION = 'django.template.defaultfilters.slugify'
