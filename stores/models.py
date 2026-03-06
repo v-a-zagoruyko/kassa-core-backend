@@ -154,3 +154,51 @@ class StoreSpecialHours(UniqueConstraintCheckMixin, models.Model):
 
     def __str__(self):
         return f"{self.store.name} - {self.date}"
+
+
+class Kiosk(BaseModel):
+    kiosk_number = models.CharField(max_length=50, verbose_name="Номер кассы")
+    store = models.ForeignKey(
+        Store,
+        on_delete=models.CASCADE,
+        related_name="kiosks",
+        verbose_name="Точка продаж",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Активна")
+
+    class Meta:
+        verbose_name = "Касса"
+        verbose_name_plural = "Кассы"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("store", "kiosk_number"),
+                name="uniq_store_kiosk_number",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.store.name} — касса {self.kiosk_number}"
+
+
+class StoreSettings(BaseModel):
+    store = models.OneToOneField(
+        Store,
+        on_delete=models.CASCADE,
+        related_name="settings",
+        verbose_name="Точка продаж",
+    )
+    receipt_header = models.TextField(blank=True, default="", verbose_name="Заголовок чека")
+    receipt_footer = models.TextField(blank=True, default="", verbose_name="Подвал чека")
+    allow_cash = models.BooleanField(default=True, verbose_name="Разрешить наличные")
+    allow_card = models.BooleanField(default=True, verbose_name="Разрешить карту")
+    max_idle_seconds = models.PositiveIntegerField(
+        default=120,
+        verbose_name="Таймаут бездействия (сек)",
+    )
+
+    class Meta:
+        verbose_name = "Настройки точки продаж"
+        verbose_name_plural = "Настройки точек продаж"
+
+    def __str__(self):
+        return f"Настройки: {self.store.name}"
