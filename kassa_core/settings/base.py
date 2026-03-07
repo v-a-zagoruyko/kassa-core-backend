@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     "accounts",
     "stores",
     "products",
+    "orders",
+    "orders",
 ]
 
 MIDDLEWARE = [
@@ -141,6 +143,7 @@ USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+AUTOSLUG_SLUGIFY_FUNCTION = "django.utils.text.slugify"
 DADATA_AUTH_TOKEN = env("DADATA_AUTH_TOKEN", default="dummy-token-for-ci")
 DADATA_REQUEST_TIMEOUT = env.float("DADATA_REQUEST_TIMEOUT", default=5.0)
 
