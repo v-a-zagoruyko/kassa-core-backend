@@ -5,6 +5,7 @@ from .models import (
     Product,
     ProductImage,
     ProductVideo,
+    ProductPrice,
     Stock,
     Barcode,
 )
@@ -87,6 +88,27 @@ class ProductAdmin(admin.ModelAdmin):
         }),
     )
     inlines = (BarcodeInline, StockInline, ProductImageInline, ProductVideoInline,)
+
+
+@admin.register(ProductPrice)
+class ProductPriceAdmin(admin.ModelAdmin):
+    list_display = ("product", "store", "price", "currency", "effective_from", "effective_to", "is_active",)
+    list_filter = ("is_active", "currency", "store",)
+    search_fields = ("product__name", "store__name",)
+    readonly_fields = ("created_at", "updated_at",)
+    ordering = ("-effective_from",)
+    fieldsets = (
+        (None, {
+            "fields": ("product", "store", "price", "currency", "is_active",),
+        }),
+        ("Период действия", {
+            "fields": ("effective_from", "effective_to",),
+        }),
+        ("Информация", {
+            "fields": ("created_at", "updated_at",),
+            "classes": ("collapse",),
+        }),
+    )
 
 
 @admin.register(Barcode)
