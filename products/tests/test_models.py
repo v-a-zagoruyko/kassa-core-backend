@@ -1,3 +1,4 @@
+import datetime
 import decimal
 
 import pytest
@@ -6,7 +7,7 @@ from django.db import IntegrityError
 
 from common.models import Address
 from stores.models import Store
-from products.models import Category, Product, ProductImage, ProductVideo, Stock
+from products.models import Category, Product, ProductImage, ProductVideo, ProductPrice, Stock
 
 
 @pytest.mark.django_db
@@ -184,3 +185,159 @@ def test_stock_str_contains_product_store_and_quantity():
 
     assert str(stock) == "Товар с остатком в Магазин с остатками: 7"
 
+
+# --- ProductPrice tests ---
+
+def _make_store(name="Тестовый магазин"):
+    address = Address.objects.create(city="Москва", street="Тверская", house="1")
+    return Store.objects.create(name=name, address=address)
+
+
+def _make_product(name="Тестовый товар", price="100.00"):
+    category = Category.objects.create(name=f"Кат {name}")
+    return Product.objects.create(
+        name=name,
+        category=category,
+        price=decimal.Decimal(price),
+    )
+
+
+@pytest.mark.django_db
+def test_product_price_creation():
+    store = _make_store()
+    product = _make_product()
+
+    pp = ProductPrice.objects.create(
+        product=product,
+        store=store,
+        price=decimal.Decimal("199.99"),
+        currency="RUB",
+        effective_from=datetime.date(2026, 1, 1),
+    )
+
+    assert pp.pk is not None
+    assert pp.price == decimal.Decimal("199.99")
+    assert pp.currency == "RUB"
+    assert pp.is_active is True
+    assert pp.effective_to is None
+
+
+@pytest.mark.django_db
+def test_product_price_str():
+    store = _make_store()
+    product = _make_product()
+
+    pp = ProductPrice(
+        product=product,
+        store=store,
+        price=decimal.Decimal("250.00"),
+        currency="RUB",
+        effective_from=datetime.date(2026, 3, 1),
+    )
+
+    assert "Тестовый товар" in str(pp)
+    assert "250.00" in str(pp)
+    assert "RUB" in str(pp)
+
+
+@pytest.mark.django_db
+def test_product_price_cannot_be_negative():
+    store = _make_store()
+    product = _make_product()
+
+    pp = ProductPrice(
+        product=product,
+        store=store,
+        price=decimal.Decimal("-10.00"),
+        effective_from=datetime.date(2026, 1, 1),
+    )
+
+    with pytest.raises(ValidationError):
+        pp.full_clean()
+
+
+@pytest.mark.django_db
+def test_product_price_unique_constraint():
+    store = _make_store()
+    product = _make_product()
+    effective_from = datetime.date(2026, 1, 1)
+
+    ProductPrice.objects.create(
+        product=product,
+        store=store,
+        price=decimal.Decimal("100.00"),
+        effective_from=effective_from,
+    )
+
+    with pytest.raises(IntegrityError):
+        ProductPrice.objects.create(
+            product=product,
+            store=store,
+            price=decimal.Decimal("200.00"),
+            effective_from=effective_from,
+        )
+
+
+@pytest.mark.django_db
+def test_product_price_with_effective_to():
+    store = _make_store()
+    product = _make_product()
+
+    pp = ProductPrice.objects.create(
+        product=product,
+        store=store,
+        price=decimal.Decimal("150.00"),
+        effective_from=datetime.date(2026, 1, 1),
+        effective_to=datetime.date(2026, 12, 31),
+    )
+
+    assert pp.effective_to == datetime.date(2026, 12, 31)
+
+
+@pytest.mark.django_db
+def test_product_price_cascade_on_product_delete():
+    store = _make_store()
+    product = _make_product()
+
+    ProductPrice.objects.create(
+        product=product,
+        store=store,
+        price=decimal.Decimal("99.00"),
+        effective_from=datetime.date(2026, 1, 1),
+    )
+
+    assert ProductPrice.objects.count() == 1
+    product.hard_delete()
+    assert ProductPrice.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_product_price_cascade_on_store_delete():
+    store = _make_store()
+    product = _make_product()
+
+    ProductPrice.objects.create(
+        product=product,
+        store=store,
+        price=decimal.Decimal("99.00"),
+        effective_from=datetime.date(2026, 1, 1),
+    )
+
+    assert ProductPrice.objects.count() == 1
+    store.hard_delete()
+    assert ProductPrice.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_product_price_default_currency_is_rub():
+    store = _make_store()
+    product = _make_product()
+
+    pp = ProductPrice.objects.create(
+        product=product,
+        store=store,
+        price=decimal.Decimal("50.00"),
+        effective_from=datetime.date(2026, 1, 1),
+    )
+
+    assert pp.currency == "RUB"
