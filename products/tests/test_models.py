@@ -4,10 +4,11 @@ import decimal
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.utils import timezone
 
 from common.models import Address
 from stores.models import Store
-from products.models import Category, Product, ProductImage, ProductVideo, ProductPrice, Stock
+from products.models import Category, Marking, Product, ProductImage, ProductVideo, ProductPrice, Stock
 
 
 @pytest.mark.django_db
@@ -341,3 +342,111 @@ def test_product_price_default_currency_is_rub():
     )
 
     assert pp.currency == "RUB"
+
+
+# --- Marking tests ---
+
+def _make_marking(code="010460436241516521FE3RZ\x1d91003A\x1d92R3qOhpajlKDGDDrHYvXUU7Q", product=None, store=None, status=Marking.Status.ACTIVE):
+    if product is None:
+        product = _make_product(name=f"Товар для маркировки {code[:10]}")
+    return Marking.objects.create(
+        code=code,
+        product=product,
+        store=store,
+        status=status,
+        marked_at=timezone.now(),
+    )
+
+
+@pytest.mark.django_db
+def test_marking_create_with_valid_data():
+    product = _make_product(name="Товар с маркировкой")
+    store = _make_store(name="Магазин для маркировки")
+
+    marking = Marking.objects.create(
+        code="010460436241516521FE3RZ",
+        product=product,
+        store=store,
+        status=Marking.Status.ACTIVE,
+        marked_at=timezone.now(),
+    )
+
+    assert marking.pk is not None
+    assert marking.code == "010460436241516521FE3RZ"
+    assert marking.product == product
+    assert marking.store == store
+    assert marking.status == Marking.Status.ACTIVE
+    assert marking.event_at is not None
+
+
+@pytest.mark.django_db
+def test_marking_status_transitions():
+    product = _make_product(name="Товар для смены статусов")
+
+    # active → sold
+    marking = Marking.objects.create(
+        code="MARK-ACTIVE-SOLD",
+        product=product,
+        status=Marking.Status.ACTIVE,
+        marked_at=timezone.now(),
+    )
+    marking.status = Marking.Status.SOLD
+    marking.save()
+    marking.refresh_from_db()
+    assert marking.status == Marking.Status.SOLD
+
+    # active → returned
+    marking2 = Marking.objects.create(
+        code="MARK-ACTIVE-RETURNED",
+        product=product,
+        status=Marking.Status.ACTIVE,
+        marked_at=timezone.now(),
+    )
+    marking2.status = Marking.Status.RETURNED
+    marking2.save()
+    marking2.refresh_from_db()
+    assert marking2.status == Marking.Status.RETURNED
+
+    # active → withdrawn
+    marking3 = Marking.objects.create(
+        code="MARK-ACTIVE-WITHDRAWN",
+        product=product,
+        status=Marking.Status.ACTIVE,
+        marked_at=timezone.now(),
+    )
+    marking3.status = Marking.Status.WITHDRAWN
+    marking3.save()
+    marking3.refresh_from_db()
+    assert marking3.status == Marking.Status.WITHDRAWN
+
+
+@pytest.mark.django_db
+def test_marking_code_unique_constraint():
+    product = _make_product(name="Товар для уникальности кода")
+    Marking.objects.create(
+        code="UNIQUE-MARKING-CODE",
+        product=product,
+        status=Marking.Status.ACTIVE,
+        marked_at=timezone.now(),
+    )
+
+    with pytest.raises(IntegrityError):
+        Marking.objects.create(
+            code="UNIQUE-MARKING-CODE",
+            product=product,
+            status=Marking.Status.SOLD,
+            marked_at=timezone.now(),
+        )
+
+
+@pytest.mark.django_db
+def test_marking_str_representation():
+    product = _make_product(name="Товар для строки")
+    marking = Marking.objects.create(
+        code="STR-TEST-CODE",
+        product=product,
+        status=Marking.Status.ACTIVE,
+        marked_at=timezone.now(),
+    )
+
+    assert str(marking) == "STR-TEST-CODE (Активна)"

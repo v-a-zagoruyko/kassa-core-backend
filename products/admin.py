@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import (
+    Barcode,
     Category,
+    Marking,
     Product,
     ProductImage,
-    ProductVideo,
     ProductPrice,
+    ProductVideo,
     Stock,
-    Barcode,
 )
 
 
@@ -149,3 +150,21 @@ class BarcodeAdmin(admin.ModelAdmin):
         if obj:  # Редактирование существующего объекта
             return self.readonly_fields + ("code",)
         return self.readonly_fields
+
+
+@admin.register(Marking)
+class MarkingAdmin(admin.ModelAdmin):
+    list_display = ("code", "product", "store", "status", "marked_at", "event_at",)
+    list_filter = ("status", "store",)
+    search_fields = ("code", "product__name",)
+    readonly_fields = ("event_at", "created_at", "updated_at",)
+    fieldsets = (
+        (None, {
+            "fields": ("code", "product", "store", "status", "barcode", "marked_at",),
+        }),
+        ("Информация", {
+            "fields": ("event_at", "created_at", "updated_at",),
+            "classes": ("collapse",),
+        }),
+    )
+    ordering = ("-event_at",)
