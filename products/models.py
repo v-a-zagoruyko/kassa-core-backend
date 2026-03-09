@@ -210,6 +210,63 @@ class Stock(BaseModel):
         return f"{self.product.name} в {self.store}: {self.quantity}"
 
 
+class ProductPrice(BaseModel):
+    """Цена товара на конкретной точке продаж."""
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="prices",
+        verbose_name="Товар",
+    )
+    store = models.ForeignKey(
+        "stores.Store",
+        on_delete=models.CASCADE,
+        related_name="prices",
+        verbose_name="Точка продаж",
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Цена",
+        validators=[
+            MinValueValidator(0, message="Цена не может быть отрицательной."),
+        ],
+    )
+    currency = models.CharField(
+        max_length=3,
+        default="RUB",
+        verbose_name="Валюта",
+    )
+    effective_from = models.DateField(
+        verbose_name="Дата начала действия",
+    )
+    effective_to = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Дата окончания действия",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активна",
+        db_index=True,
+    )
+
+    class Meta:
+        verbose_name = "Цена товара"
+        verbose_name_plural = "Цены товаров"
+        ordering = ("-effective_from",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("product", "store", "effective_from"),
+                name="uniq_product_store_effective_from",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.product.name} в {self.store}: {self.price} {self.currency} с {self.effective_from}"
+
+
 class Barcode(BaseModel):
     """Штрихкод товара (EAN-13, QR-код, Code-128, Data Matrix)."""
 
