@@ -433,3 +433,73 @@ class Barcode(BaseModel):
         provided_checksum = int(code[-1])
 
         return calculated_checksum == provided_checksum
+
+
+class Marking(BaseModel):
+    """Маркировка товара (Честный ЗНАК, Data Matrix)."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Активна"
+        SOLD = "sold", "Продана"
+        RETURNED = "returned", "Возвращена"
+        WITHDRAWN = "withdrawn", "Выведена из оборота"
+
+    code = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name="Код маркировки (Data Matrix)",
+        db_index=True,
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="markings",
+        verbose_name="Товар",
+    )
+    store = models.ForeignKey(
+        "stores.Store",
+        on_delete=models.SET_NULL,
+        related_name="markings",
+        null=True,
+        blank=True,
+        verbose_name="Точка продаж",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+        verbose_name="Статус",
+        db_index=True,
+    )
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.SET_NULL,
+        related_name="markings",
+        null=True,
+        blank=True,
+        verbose_name="Штрихкод",
+    )
+    marked_at = models.DateTimeField(
+        verbose_name="Дата маркировки",
+    )
+    event_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата последнего события",
+    )
+
+    class Meta:
+        verbose_name = "Маркировка"
+        verbose_name_plural = "Маркировки"
+        indexes = [
+            models.Index(fields=("code",)),
+            models.Index(fields=("product_id", "status")),
+            models.Index(fields=("store_id", "status")),
+        ]
+
+    def clean(self):
+        super().clean()
+        if not self.code or not self.code.strip():
+            raise ValidationError({"code": "Код маркировки не может быть пустым."})
+
+    def __str__(self):
+        return f"{self.code} ({self.get_status_display()})"
