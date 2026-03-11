@@ -224,3 +224,68 @@ class OrderStatus(models.Model):
 
     def __str__(self):
         return f'{self.order} → {self.get_status_display()}'
+
+
+class Reservation(BaseModel):
+    """Резервирование товара для заказа."""
+
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Активен'
+        COMPLETED = 'completed', 'Выполнен'
+        EXPIRED = 'expired', 'Истёк'
+        RELEASED = 'released', 'Освобождён'
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='reservations',
+        verbose_name='Заказ',
+    )
+    product = models.ForeignKey(
+        'products.Product',
+        on_delete=models.PROTECT,
+        related_name='reservations',
+        verbose_name='Товар',
+    )
+    store = models.ForeignKey(
+        'stores.Store',
+        on_delete=models.PROTECT,
+        related_name='reservations',
+        verbose_name='Магазин',
+    )
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        verbose_name='Количество',
+    )
+    expires_at = models.DateTimeField(
+        verbose_name='Истекает в',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+        verbose_name='Статус',
+        db_index=True,
+    )
+    released_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Освобождён в',
+    )
+
+    class Meta:
+        verbose_name = 'Резервирование'
+        verbose_name_plural = 'Резервирования'
+        indexes = [
+            models.Index(fields=['product', 'store']),
+            models.Index(fields=['status', 'expires_at']),
+        ]
+
+    def is_expired(self) -> bool:
+        """Check if the reservation has expired."""
+        from django.utils import timezone
+        return timezone.now() >= self.expires_at
+
+    def __str__(self):
+        return f'Резерв {self.product} x{self.quantity} для {self.order}'
