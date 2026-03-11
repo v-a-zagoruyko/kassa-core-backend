@@ -322,3 +322,117 @@ class OrderStatusLog(models.Model):
 
     def __str__(self):
         return f'{self.order} → {self.get_status_display()} @ {self.created_at}'
+
+
+class PromoCode(BaseModel):
+    """Промокод для скидки на заказ."""
+
+    class DiscountType(models.TextChoices):
+        PERCENT = 'percent', 'Процент'
+        FIXED = 'fixed', 'Фиксированная сумма'
+
+    class OrderTypes(models.TextChoices):
+        ALL = 'all', 'Все типы'
+        DELIVERY = 'delivery', 'Доставка'
+        PICKUP = 'pickup', 'Самовывоз'
+
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Код промокода',
+        db_index=True,
+    )
+    discount_type = models.CharField(
+        max_length=10,
+        choices=DiscountType.choices,
+        verbose_name='Тип скидки',
+    )
+    discount_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Размер скидки',
+    )
+    min_order_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='Минимальная сумма заказа',
+    )
+    valid_from = models.DateTimeField(
+        verbose_name='Действует с',
+    )
+    valid_until = models.DateTimeField(
+        verbose_name='Действует до',
+    )
+    max_uses = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Максимальное количество использований',
+    )
+    uses_count = models.IntegerField(
+        default=0,
+        verbose_name='Количество использований',
+    )
+    order_types = models.CharField(
+        max_length=10,
+        choices=OrderTypes.choices,
+        default=OrderTypes.ALL,
+        verbose_name='Типы заказов',
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Активен',
+        db_index=True,
+    )
+
+    class Meta:
+        verbose_name = 'Промокод'
+        verbose_name_plural = 'Промокоды'
+
+    def __str__(self):
+        return f'{self.code} ({self.get_discount_type_display()}: {self.discount_value})'
+
+    def is_valid(self, order_amount: 'Decimal', order_type: str) -> tuple:
+        """Validate the promo code for a given order.
+
+        Returns:
+            tuple(bool, str): (is_valid, error_message_or_empty)
+        """
+        from django.utils import timezone
+        from decimal import Decimal
+
+        now = timezone.now()
+
+        if not self.is_active:
+            return False, 'Промокод неактивен.'
+
+        if now < self.valid_from:
+            return False, 'Промокод ещё не действует.'
+
+        if now > self.valid_until:
+            return False, 'Срок действия промокода истёк.'
+
+        if self.max_uses is not None and self.uses_count >= self.max_uses:
+            return False, 'Лимит использований промокода исчерпан.'
+
+        if order_amount < self.min_order_amount:
+            return False, (
+                f'Минимальная сумма заказа для этого промокода: {self.min_order_amount} руб.'
+            )
+
+        if self.order_types != self.OrderTypes.ALL and self.order_types != order_type:
+            return False, f'Промокод действует только для типа "{self.get_order_types_display()}".'
+
+        return True, ''
+
+    def calculate_discount(self, order_amount: 'Decimal') -> 'Decimal':
+        """Calculate discount amount for the given order amount."""
+        from decimal import Decimal, ROUND_HALF_UP
+
+        if self.discount_type == self.DiscountType.PERCENT:
+            discount = order_amount * self.discount_value / Decimal('100')
+        else:
+            discount = self.discount_value
+
+        result = min(discount, order_amount)
+        return result.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
