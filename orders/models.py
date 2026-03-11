@@ -289,3 +289,36 @@ class Reservation(BaseModel):
 
     def __str__(self):
         return f'Резерв {self.product} x{self.quantity} для {self.order}'
+
+
+class OrderStatusLog(models.Model):
+    """Log entry for order status changes (used for delivery tracking)."""
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='status_logs',
+        verbose_name='Заказ',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Order.Status.choices,
+        verbose_name='Статус',
+    )
+    comment = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Комментарий',
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата',
+    )
+
+    class Meta:
+        verbose_name = 'Лог статуса заказа'
+        verbose_name_plural = 'Логи статусов заказов'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.order} → {self.get_status_display()} @ {self.created_at}'
