@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, UserProfile, UserSettings, UserAddress
+from .models import User, UserProfile, UserSettings, UserAddress, Permission, Role, RolePermission
 
 
 class UserProfileInline(admin.StackedInline):
@@ -44,3 +44,19 @@ class UserAdmin(BaseUserAdmin):
     @admin.display(description="Телефон")
     def phone(self, obj):
         return obj.profile.phone
+
+
+@admin.register(Permission)
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ("name", "codename")
+
+
+class RolePermissionInline(admin.TabularInline):
+    model = RolePermission
+    extra = 0
+
+
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ("name", "codename", "parent", "is_active")
+    inlines = (RolePermissionInline,)
