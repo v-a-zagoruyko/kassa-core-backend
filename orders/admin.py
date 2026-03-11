@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, OrderStatus, Reservation, OrderStatusLog
+from .models import Order, OrderItem, OrderStatus, Reservation, OrderStatusLog, PromoCode
 
 
 class OrderItemInline(admin.TabularInline):
@@ -72,6 +72,14 @@ class OrderStatusLogAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     search_fields = ('order__id', 'comment')
     readonly_fields = ('order', 'status', 'comment', 'created_at')
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_type', 'discount_value', 'min_order_amount', 'order_types', 'valid_from', 'valid_until', 'max_uses', 'uses_count', 'is_active')
+    list_filter = ('discount_type', 'order_types', 'is_active')
+    search_fields = ('code',)
+    readonly_fields = ('uses_count',)
 
 
 @admin.register(Reservation)
