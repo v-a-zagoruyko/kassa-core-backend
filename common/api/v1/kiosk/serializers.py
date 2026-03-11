@@ -1,39 +1,66 @@
 from rest_framework import serializers
-from products.models import Barcode, Product
+from products.models import Category, Product
 
 
-class BarcodeSerializer(serializers.ModelSerializer):
-    """Сериализатор для штрихкодов."""
-
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Barcode
-        fields = ("id", "code", "barcode_type", "is_primary", "created_at")
-        read_only_fields = ("id", "created_at")
-
-    def validate_code(self, value):
-        """Дополнительная валидация кода на уровне сериализатора."""
-        # Проверка уникальности уже в модели, но можно добавить здесь
-        instance_pk = self.instance.pk if self.instance else None
-        if Barcode.objects.filter(code=value).exclude(pk=instance_pk).exists():
-            raise serializers.ValidationError("Штрихкод с этим кодом уже существует.")
-        return value
+        model = Category
+        fields = ("id", "name", "slug")
 
 
-class ProductDetailSerializer(serializers.ModelSerializer):
-    """Детальный сериализатор товара с штрихкодами."""
+class KioskProductSerializer(serializers.ModelSerializer):
+    """
+    Serializer for products exposed at GET /api/v1/kiosk/products/.
 
-    barcodes = BarcodeSerializer(many=True, read_only=True)
+    Fields match the kiosk display requirements:
+    id, name, price, barcode, category, image_url, stock_quantity.
+    """
+
+    category = CategorySerializer(read_only=True)
+    barcode = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
+    stock_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
             "id",
             "name",
-            "description",
-            "category",
             "price",
-            "is_active",
-            "barcodes",
-            "created_at",
-            "updated_at",
+            "barcode",
+            "category",
+            "image_url",
+            "stock_quantity",
         )
+
+    def get_barcode(self, obj) -> str | None:
+        """Return primary barcode code, or first available barcode."""
+        barcodes = list(obj.barcodes.all())
+        primary = next((b.code for b in barcodes if b.is_primary), None)
+        if primary:
+            return primary
+        return barcodes[0].code if barcodes else None
+
+    def get_image_url(self, obj) -> str | None:
+        """Return URL of the first product image."""
+        request = self.context.get("request")
+        images = list(obj.images.all())
+        if not images:
+            return None
+        image = images[0].image
+        if request:
+            return request.build_absolute_uri(image.url)
+        return image.url
+
+    def get_stock_quantity(self, obj) -> float | None:
+        """Return available stock quantity for the requested store."""
+        store = self.context.get("store")
+        if store is None:
+            return None
+        stocks = list(obj.stocks.all())
+        stock = next((s for s in stocks if s.store_id == store.id), None)
+        if stock is None:
+            return None
+        # available_quantity = quantity - reserved_quantity (>= 0)
+        quantity = stock.quantity - stock.reserved_quantity
+        return float(max(quantity, 0))
