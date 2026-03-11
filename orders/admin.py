@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, OrderStatus
+from .models import Order, OrderItem, OrderStatus, Reservation
 
 
 class OrderItemInline(admin.TabularInline):
@@ -64,3 +64,12 @@ class OrderStatusAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     search_fields = ('order__id', 'comment')
     readonly_fields = ('created_at',)
+
+
+@admin.register(Reservation)
+class ReservationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order', 'product', 'store', 'quantity', 'status', 'expires_at', 'released_at')
+    list_filter = ('status', 'store')
+    search_fields = ('order__id', 'product__name', 'store__name')
+    readonly_fields = ('created_at', 'updated_at')
+    raw_id_fields = ('order', 'product', 'store')
