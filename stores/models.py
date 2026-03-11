@@ -37,6 +37,22 @@ class Store(BaseModel):
             MinValueValidator(0.01, message="Радиус доставки должен быть больше 0"),
         ],
     )
+    lat = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name="Широта",
+        help_text="Координата магазина (широта)",
+    )
+    lon = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name="Долгота",
+        help_text="Координата магазина (долгота)",
+    )
 
     class Meta:
         verbose_name = "Точка продаж"
@@ -202,3 +218,58 @@ class StoreSettings(BaseModel):
 
     def __str__(self):
         return f"Настройки: {self.store.name}"
+
+
+class DeliveryZone(BaseModel):
+    """Зона доставки магазина с условиями."""
+
+    store = models.ForeignKey(
+        Store,
+        on_delete=models.CASCADE,
+        related_name="delivery_zones",
+        verbose_name="Магазин",
+    )
+    name = models.CharField(
+        max_length=255,
+        verbose_name="Название зоны",
+    )
+    radius_km = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Радиус зоны (км)",
+        help_text="Максимальное расстояние от магазина для данной зоны",
+    )
+    min_order_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Минимальная сумма заказа",
+    )
+    delivery_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Стоимость доставки",
+    )
+    delivery_time_minutes = models.IntegerField(
+        verbose_name="Время доставки (минут)",
+        help_text="ETA в минутах",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активна",
+        db_index=True,
+    )
+
+    class Meta:
+        verbose_name = "Зона доставки"
+        verbose_name_plural = "Зоны доставки"
+        ordering = ("radius_km",)
+        indexes = [
+            models.Index(fields=("store", "is_active")),
+        ]
+
+    def __str__(self):
+        return f"{self.store.name} — {self.name}"

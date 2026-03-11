@@ -5,7 +5,7 @@ from django.urls import path
 
 from . import admin_views
 from .forms import StoreAdminForm
-from .models import Store, StoreWorkingHours, StoreSpecialHours, Kiosk, StoreSettings
+from .models import Store, StoreWorkingHours, StoreSpecialHours, Kiosk, StoreSettings, DeliveryZone
 from .context import get_store_map_context
 from products.models import Stock
 
@@ -32,6 +32,13 @@ class StockInline(admin.TabularInline):
     fields = ("product", "quantity",)
 
 
+class DeliveryZoneInline(admin.TabularInline):
+    model = DeliveryZone
+    extra = 0
+    fields = ("name", "radius_km", "delivery_cost", "delivery_time_minutes", "min_order_amount", "is_active")
+    show_change_link = True
+
+
 @admin.register(Store)
 class StoreAdmin(admin.ModelAdmin):
     form = StoreAdminForm
@@ -44,7 +51,7 @@ class StoreAdmin(admin.ModelAdmin):
             "fields": ("is_active", "name", "address", "delivery_radius_km",),
         }),
     )
-    inlines = (StockInline, StoreWorkingHoursInline, StoreSpecialHoursInline,)
+    inlines = (StockInline, StoreWorkingHoursInline, StoreSpecialHoursInline, DeliveryZoneInline,)
 
     class Media:
         css = {"all": ("stores/css/address_dadata_widget.css",)}
@@ -97,3 +104,12 @@ class StoreSettingsAdmin(admin.ModelAdmin):
     list_display = ("store", "allow_cash", "allow_card", "max_idle_seconds",)
     search_fields = ("store__name",)
     fields = ("store", "receipt_header", "receipt_footer", "allow_cash", "allow_card", "max_idle_seconds",)
+
+
+@admin.register(DeliveryZone)
+class DeliveryZoneAdmin(admin.ModelAdmin):
+    list_display = ("name", "store", "radius_km", "delivery_cost", "delivery_time_minutes", "min_order_amount", "is_active")
+    list_filter = ("is_active", "store")
+    search_fields = ("name", "store__name")
+    readonly_fields = ("created_at", "updated_at")
+    fields = ("store", "name", "radius_km", "delivery_cost", "delivery_time_minutes", "min_order_amount", "is_active", "created_at", "updated_at")
