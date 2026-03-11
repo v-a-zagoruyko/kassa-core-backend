@@ -98,6 +98,11 @@ class UserSettings(BaseModel):
         default=True,
         verbose_name="Email уведомления о скидках",
     )
+    language = models.CharField(max_length=10, default="ru")
+    timezone = models.CharField(max_length=64, default="UTC")
+    notifications_enabled = models.BooleanField(default=True)
+    theme = models.CharField(max_length=20, default="light")
+    extra = models.JSONField(default=dict, blank=True)
 
     class Meta:
         verbose_name = "Настройки пользователя"
@@ -105,6 +110,11 @@ class UserSettings(BaseModel):
 
     def __str__(self):
         return f"Настройки пользователя {self.user}"
+
+    @classmethod
+    def get(cls, user):
+        settings_obj, _ = cls.objects.get_or_create(user=user)
+        return settings_obj
 
 
 class UserAddress(BaseModel):
