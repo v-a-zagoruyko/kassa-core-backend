@@ -151,3 +151,37 @@ class OrderCancelView(APIView):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(OrderSerializer(order).data)
+
+
+class OrderTrackingView(APIView):
+    """
+    GET /api/v1/orders/{id}/tracking/
+
+    Returns delivery tracking info:
+    {current_status, estimated_delivery_at, delivered_at, history: [...]}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_id):
+        from orders.models import OrderStatusLog
+
+        order = get_object_or_404(
+            Order.objects.prefetch_related('status_logs'),
+            pk=order_id,
+            customer=request.user,
+        )
+        logs = order.status_logs.order_by('created_at')
+        history = [
+            {
+                'status': log.status,
+                'comment': log.comment,
+                'created_at': log.created_at,
+            }
+            for log in logs
+        ]
+        return Response({
+            'current_status': order.status,
+            'estimated_delivery_at': order.estimated_delivery_at,
+            'delivered_at': order.delivered_at,
+            'history': history,
+        })
