@@ -41,6 +41,13 @@ class User(BaseModel, AbstractUser):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 
+    roles = models.ManyToManyField(
+        "Role",
+        blank=True,
+        related_name="users",
+        verbose_name="Роли",
+    )
+
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
@@ -52,6 +59,19 @@ class User(BaseModel, AbstractUser):
     @property
     def full_name(self):
         return " ".join(filter(None, [self.first_name, self.last_name]))
+
+    def has_permission(self, codename: str) -> bool:
+        for role in self.roles.filter(is_active=True):
+            if role.get_all_permissions().filter(codename=codename).exists():
+                return True
+        return False
+
+    def get_all_permissions(self):
+        from django.db.models import QuerySet
+        result = Permission.objects.none()
+        for role in self.roles.filter(is_active=True):
+            result = result | role.get_all_permissions()
+        return result.distinct()
 
 
 class UserProfile(BaseModel):
