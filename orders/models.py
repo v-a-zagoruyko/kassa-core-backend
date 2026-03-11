@@ -8,6 +8,7 @@ from products.models import Product
 class Order(BaseModel):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Черновик'
+        PENDING = 'pending', 'Ожидает обработки'
         PENDING_PAYMENT = 'pending_payment', 'Ожидает оплаты'
         PAID = 'paid', 'Оплачен'
         COMPLETED = 'completed', 'Завершён'
@@ -17,6 +18,18 @@ class Order(BaseModel):
         CASH = 'cash', 'Наличные'
         CARD = 'card', 'Банковская карта'
         QR = 'qr', 'QR-код'
+
+    class OrderType(models.TextChoices):
+        DELIVERY = 'delivery', 'Доставка'
+        PICKUP = 'pickup', 'Самовывоз'
+        KIOSK = 'kiosk', 'Касса'
+
+    class DeliveryStatus(models.TextChoices):
+        PENDING = 'pending', 'Ожидает'
+        ASSIGNED = 'assigned', 'Курьер назначен'
+        IN_TRANSIT = 'in_transit', 'В пути'
+        DELIVERED = 'delivered', 'Доставлен'
+        FAILED = 'failed', 'Не удалось доставить'
 
     store = models.ForeignKey(
         Store,
@@ -45,6 +58,48 @@ class Order(BaseModel):
         choices=Status.choices,
         default=Status.DRAFT,
         verbose_name='Статус',
+    )
+    order_type = models.CharField(
+        max_length=10,
+        choices=OrderType.choices,
+        default=OrderType.DELIVERY,
+        verbose_name='Тип заказа',
+    )
+    delivery_address = models.ForeignKey(
+        'common.Address',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders',
+        verbose_name='Адрес доставки',
+    )
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        null=True,
+        blank=True,
+        verbose_name='Статус доставки',
+    )
+    estimated_delivery_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Ожидаемое время доставки',
+    )
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Фактическое время доставки',
+    )
+    delivery_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='Стоимость доставки',
+    )
+    courier_comment = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Комментарий к заказу',
     )
     total_amount = models.DecimalField(
         max_digits=12,
@@ -84,6 +139,7 @@ class Order(BaseModel):
             models.Index(fields=['store', 'status']),
             models.Index(fields=['store', 'created_at']),
             models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['order_type', 'status']),
         ]
 
     def __str__(self):

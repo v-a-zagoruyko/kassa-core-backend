@@ -19,11 +19,35 @@ class OrderStatusInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'store', 'kiosk', 'status', 'total_amount', 'final_amount', 'payment_method', 'created_at')
-    list_filter = ('status', 'payment_method', 'store')
+    list_display = (
+        'id', 'store', 'kiosk', 'customer', 'order_type', 'status',
+        'delivery_status', 'total_amount', 'delivery_cost', 'final_amount',
+        'payment_method', 'created_at',
+    )
+    list_filter = ('status', 'order_type', 'delivery_status', 'payment_method', 'store')
     search_fields = ('id', 'store__name', 'customer__email')
     readonly_fields = ('created_at', 'updated_at')
+    raw_id_fields = ('delivery_address',)
     inlines = (OrderItemInline, OrderStatusInline)
+    fieldsets = (
+        ('Основное', {
+            'fields': ('store', 'kiosk', 'customer', 'status', 'order_type', 'payment_method'),
+        }),
+        ('Доставка', {
+            'fields': (
+                'delivery_address', 'delivery_status', 'delivery_cost',
+                'estimated_delivery_at', 'delivered_at', 'courier_comment',
+            ),
+            'classes': ('collapse',),
+        }),
+        ('Финансы', {
+            'fields': ('total_amount', 'discount_amount', 'final_amount', 'completed_at'),
+        }),
+        ('Системное', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
 
 
 @admin.register(OrderItem)
