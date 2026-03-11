@@ -143,6 +143,23 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTOSLUG_SLUGIFY_FUNCTION = "slugify.slugify"
+REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "IGNORE_EXCEPTIONS": True,
+        },
+        "KEY_PREFIX": "kassa",
+        "TIMEOUT": 300,
+    }
+}
+
 DADATA_AUTH_TOKEN = env("DADATA_AUTH_TOKEN", default="dummy-token-for-ci")
 DADATA_REQUEST_TIMEOUT = env.float("DADATA_REQUEST_TIMEOUT", default=5.0)
 
