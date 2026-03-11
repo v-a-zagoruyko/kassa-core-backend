@@ -184,7 +184,7 @@ def test_stock_str_contains_product_store_and_quantity():
         quantity=7,
     )
 
-    assert str(stock) == "Товар с остатком в Магазин с остатками: 7"
+    assert str(stock) == "Товар с остатком в Магазин с остатками: 7 (рез. 0)"
 
 
 # --- ProductPrice tests ---

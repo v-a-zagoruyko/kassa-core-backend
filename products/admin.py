@@ -49,7 +49,7 @@ class ProductVideoInline(admin.StackedInline):
 class StockInline(admin.TabularInline):
     model = Stock
     extra = 0
-    fields = ("store", "quantity",)
+    fields = ("store", "quantity", "reserved_quantity",)
 
 
 class BarcodeInline(admin.TabularInline):
@@ -150,6 +150,30 @@ class BarcodeAdmin(admin.ModelAdmin):
         if obj:  # Редактирование существующего объекта
             return self.readonly_fields + ("code",)
         return self.readonly_fields
+
+
+@admin.register(Stock)
+class StockAdmin(admin.ModelAdmin):
+    list_display = ("product", "store", "quantity", "reserved_quantity", "available_quantity", "updated_at",)
+    list_filter = ("store",)
+    search_fields = ("product__name", "store__name",)
+    readonly_fields = ("available_quantity", "created_at", "updated_at",)
+    fieldsets = (
+        (None, {
+            "fields": ("product", "store", "quantity", "reserved_quantity",),
+        }),
+        ("Вычисляемые", {
+            "fields": ("available_quantity",),
+        }),
+        ("Информация", {
+            "fields": ("created_at", "updated_at",),
+            "classes": ("collapse",),
+        }),
+    )
+
+    @admin.display(description="Доступно")
+    def available_quantity(self, obj):
+        return obj.available_quantity
 
 
 @admin.register(Marking)
