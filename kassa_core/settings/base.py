@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "viewflow",
     "simple_history",
+    "api",
     "common",
     "accounts",
     "stores",
