@@ -153,6 +153,53 @@ class OrderCancelView(APIView):
         return Response(OrderSerializer(order).data)
 
 
+class OrderApplyPromoView(APIView):
+    """
+    POST /api/v1/orders/{id}/apply-promo/
+
+    Body: {code}
+    Response: {discount_amount, new_final_amount}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_id):
+        from orders.models import PromoCode
+        from decimal import Decimal
+        from django.db import transaction
+
+        order = get_object_or_404(Order, pk=order_id, customer=request.user)
+        code = request.data.get('code', '').strip()
+
+        if not code:
+            return Response({'detail': 'Необходимо указать код промокода.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            promo = PromoCode.objects.get(code=code)
+        except PromoCode.DoesNotExist:
+            return Response({'detail': 'Промокод не найден.'}, status=status.HTTP_404_NOT_FOUND)
+
+        valid, error = promo.is_valid(order.total_amount, order.order_type)
+        if not valid:
+            return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            discount_amount = promo.calculate_discount(order.total_amount)
+            order.discount_amount = discount_amount
+            order.final_amount = max(
+                order.total_amount - discount_amount + order.delivery_cost,
+                Decimal('0'),
+            )
+            order.save(update_fields=['discount_amount', 'final_amount', 'updated_at'])
+
+            promo.uses_count += 1
+            promo.save(update_fields=['uses_count'])
+
+        return Response({
+            'discount_amount': str(discount_amount),
+            'new_final_amount': str(order.final_amount),
+        })
+
+
 class OrderTrackingView(APIView):
     """
     GET /api/v1/orders/{id}/tracking/
