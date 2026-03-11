@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from accounts.models import UserSettings
+from accounts.serializers import UserSettingsSerializer
 from accounts.services.phone_auth_service import VerificationResult, send_verification_code, verify_code
 
 from .serializers import SendCodeSerializer, VerifyCodeSerializer
@@ -59,3 +61,18 @@ class VerifyCodeView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+class UserSettingsView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        settings_obj = UserSettings.get(request.user)
+        serializer = UserSettingsSerializer(settings_obj)
+        return Response(serializer.data)
+
+    def patch(self, request, *args, **kwargs):
+        settings_obj = UserSettings.get(request.user)
+        serializer = UserSettingsSerializer(settings_obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
