@@ -188,11 +188,22 @@ class Stock(BaseModel):
         related_name="stocks",
         verbose_name="Точка продаж",
     )
-    quantity = models.PositiveIntegerField(
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
         default=0,
         verbose_name="Количество на складе",
         validators=[
             MinValueValidator(0, message="Количество не может быть отрицательным."),
+        ],
+    )
+    reserved_quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        default=0,
+        verbose_name="Зарезервировано",
+        validators=[
+            MinValueValidator(0, message="Зарезервированное количество не может быть отрицательным."),
         ],
     )
 
@@ -207,7 +218,12 @@ class Stock(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.product.name} в {self.store}: {self.quantity}"
+        return f"{self.product.name} в {self.store}: {self.quantity} (рез. {self.reserved_quantity})"
+
+    @property
+    def available_quantity(self):
+        """Доступное к продаже количество (с учётом резервов)."""
+        return max(self.quantity - self.reserved_quantity, 0)
 
 
 class ProductPrice(BaseModel):
