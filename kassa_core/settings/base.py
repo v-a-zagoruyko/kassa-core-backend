@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 import environ
 from pathlib import Path
+from celery.schedules import crontab
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -188,5 +189,10 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    "release-expired-reservations": {
+        "task": "orders.tasks.release_expired_reservations",
+        "schedule": crontab(minute="*"),
+    },
+}
 
