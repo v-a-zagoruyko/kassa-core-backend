@@ -29,5 +29,49 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build: .
+    command: celery -A kassa_core worker -l info -Q celery
+    volumes:
+      - .:/app
+    environment:
+      - ENVIRONMENT=dev
+      - DJANGO_SETTINGS_MODULE=kassa_core.settings
+      - POSTGRES_DB=kassa_core_db
+      - POSTGRES_USER=kassa_core_user
+      - POSTGRES_PASSWORD=kassa_core_pass
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  celery_beat:
+    build: .
+    command: celery -A kassa_core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    environment:
+      - ENVIRONMENT=dev
+      - DJANGO_SETTINGS_MODULE=kassa_core.settings
+      - POSTGRES_DB=kassa_core_db
+      - POSTGRES_USER=kassa_core_user
+      - POSTGRES_PASSWORD=kassa_core_pass
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
 volumes:
   postgres_data:
