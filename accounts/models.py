@@ -129,6 +129,76 @@ class UserAddress(BaseModel):
         return f"Адрес пользователя {self.user}"
 
 
+class Permission(BaseModel):
+    name = models.CharField(max_length=100, verbose_name="Название")
+    codename = models.CharField(max_length=100, unique=True, verbose_name="Кодовое имя")
+    description = models.TextField(blank=True, verbose_name="Описание")
+
+    class Meta:
+        verbose_name = "Разрешение"
+        verbose_name_plural = "Разрешения"
+        ordering = ["codename"]
+
+    def __str__(self):
+        return self.codename
+
+
+class Role(BaseModel):
+    name = models.CharField(max_length=100, verbose_name="Название")
+    codename = models.CharField(max_length=100, unique=True, verbose_name="Кодовое имя")
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children",
+        verbose_name="Родительская роль",
+    )
+    description = models.TextField(blank=True, verbose_name="Описание")
+    is_active = models.BooleanField(default=True, verbose_name="Активна")
+    permissions = models.ManyToManyField(
+        Permission,
+        through="RolePermission",
+        blank=True,
+        verbose_name="Разрешения",
+    )
+
+    class Meta:
+        verbose_name = "Роль"
+        verbose_name_plural = "Роли"
+        ordering = ["codename"]
+
+    def __str__(self):
+        return self.codename
+
+    def get_ancestors(self):
+        ancestors = []
+        current = self.parent
+        while current is not None:
+            ancestors.append(current)
+            current = current.parent
+        return ancestors
+
+    def get_all_permissions(self):
+        role_ids = [self.pk] + [r.pk for r in self.get_ancestors()]
+        return Permission.objects.filter(
+            rolepermission__role_id__in=role_ids
+        ).distinct()
+
+
+class RolePermission(BaseModel):
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, verbose_name="Роль")
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, verbose_name="Разрешение")
+
+    class Meta:
+        verbose_name = "Разрешение роли"
+        verbose_name_plural = "Разрешения ролей"
+        unique_together = (("role", "permission"),)
+
+    def __str__(self):
+        return f"{self.role} → {self.permission}"
+
+
 class PhoneVerificationCode(BaseModel):
     phone = PhoneNumberField(
         region="RU",
