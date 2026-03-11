@@ -6,4 +6,5 @@ urlpatterns = [
     path("accounts/", include("common.api.v1.accounts.urls")),
     path("kiosk/", include("common.api.v1.kiosk.urls")),
     path("", include("common.api.v1.stores.urls")),
+    path("", include("common.api.v1.orders.urls")),
 ]
