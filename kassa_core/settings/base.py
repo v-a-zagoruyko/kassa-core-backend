@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "products",
     "orders",
     "payments",
+    "fiscal",
 ]
 
 MIDDLEWARE = [
@@ -196,4 +197,6 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*"),
     },
 }
+
+OFD_WEBHOOK_TOKEN = env("OFD_WEBHOOK_TOKEN", default="")
 
