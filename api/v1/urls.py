@@ -9,4 +9,5 @@ urlpatterns = [
     path("kiosk/", include("common.api.v1.kiosk.urls")),
     path("", include("common.api.v1.stores.urls")),
     path("", include("common.api.v1.orders.urls")),
+    path("", include("common.api.v1.payments.urls")),
 ]
