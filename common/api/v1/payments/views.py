@@ -96,3 +96,48 @@ class PaymentMethodListView(generics.ListAPIView):
 
     def get_queryset(self):
         return PaymentMethod.objects.filter(is_active=True)
+
+
+class PaymentWebhookView(APIView):
+    """
+    POST /api/v1/payments/webhook/
+
+    Публичный endpoint (без JWT — вызывает эквайер).
+    Принимает сырой payload от эквайера и обрабатывает его через PaymentService.
+
+    ВАЖНО: В реальной интеграции здесь должна быть верификация подписи
+    (HMAC или подпись эквайера), чтобы исключить подделку запросов.
+    Текущая заглушка принимает все запросы без проверки.
+    """
+
+    permission_classes = []  # Публичный endpoint
+
+    def post(self, request):
+        payload = request.data
+
+        if not payload:
+            return Response(
+                {"detail": "Пустой payload."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            payment = PaymentService.process_webhook(payload)
+        except Payment.DoesNotExist:
+            return Response(
+                {"detail": "Платёж не найден."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as exc:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception("Webhook processing error: %s", exc)
+            return Response(
+                {"detail": "Ошибка обработки webhook."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"status": "ok", "payment_status": payment.status},
+            status=status.HTTP_200_OK,
+        )
