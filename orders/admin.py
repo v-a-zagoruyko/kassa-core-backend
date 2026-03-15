@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, OrderStatus, Reservation, OrderStatusLog, PromoCode
+from .models import Order, OrderItem, OrderStatus, Reservation, OrderStatusLog, PromoCode, Package
 
 
 class OrderItemInline(admin.TabularInline):
@@ -17,6 +17,12 @@ class OrderStatusInline(admin.TabularInline):
     readonly_fields = ('created_at',)
 
 
+class PackageInline(admin.TabularInline):
+    model = Package
+    extra = 0
+    fields = ('name', 'price', 'quantity')
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -28,7 +34,7 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ('id', 'store__name', 'customer__email')
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('delivery_address',)
-    inlines = (OrderItemInline, OrderStatusInline)
+    inlines = (OrderItemInline, OrderStatusInline, PackageInline)
     fieldsets = (
         ('Основное', {
             'fields': ('store', 'kiosk', 'customer', 'status', 'order_type', 'payment_method'),
