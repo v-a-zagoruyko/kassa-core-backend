@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     "orders",
     "payments",
     "fiscal",
+    "integrations",
+    "analytics",
     "returns",
 ]
 
@@ -211,7 +213,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/5"),
     },
     "calculate-daily-metrics": {
-        "task": "kassa_core.tasks.calculate_daily_metrics_task",
+        "task": "analytics.tasks.calculate_daily_metrics_task",
         "schedule": crontab(hour=0, minute=0),
     },
 }
