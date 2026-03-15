@@ -79,7 +79,7 @@ class AnalyticsService:
                 total=Coalesce(Sum("quantity"), 0)
             )["total"] or 0
             data = {
-                "total_revenue": str(total_revenue),
+                "total_revenue": str(total_revenue.quantize(Decimal("0.01"))),
                 "total_orders": orders_count,
                 "avg_order_value": str((total_revenue / orders_count).quantize(Decimal("0.01")) if orders_count > 0 else Decimal("0")),
                 "products_sold": products_sold,
