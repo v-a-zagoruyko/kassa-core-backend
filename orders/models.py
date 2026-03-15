@@ -324,6 +324,37 @@ class OrderStatusLog(models.Model):
         return f'{self.order} → {self.get_status_display()} @ {self.created_at}'
 
 
+class Package(BaseModel):
+    """Упаковка (пакет, сумка) для заказа."""
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='packages',
+        verbose_name='Заказ',
+    )
+    name = models.CharField(
+        max_length=255,
+        verbose_name='Название',
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Цена',
+    )
+    quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Количество',
+    )
+
+    class Meta:
+        verbose_name = 'Упаковка'
+        verbose_name_plural = 'Упаковки'
+
+    def __str__(self):
+        return f'{self.name} x{self.quantity} для {self.order_id}'
+
+
 class PromoCode(BaseModel):
     """Промокод для скидки на заказ."""
 
