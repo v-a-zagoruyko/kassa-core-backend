@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
     "viewflow",
     "simple_history",
     "django_celery_beat",
@@ -35,6 +36,8 @@ INSTALLED_APPS = [
     "orders",
     "payments",
     "fiscal",
+    "integrations",
+    "analytics",
 ]
 
 MIDDLEWARE = [
@@ -173,6 +176,14 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "EXCEPTION_HANDLER": "common.api.exception_handler.custom_exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Kassa Core API",
+    "DESCRIPTION": "Backend для кассы самообслуживания и мобильного приложения доставки",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 SIMPLE_JWT = {
@@ -195,6 +206,14 @@ CELERY_BEAT_SCHEDULE = {
     "release-expired-reservations": {
         "task": "orders.tasks.release_expired_reservations",
         "schedule": crontab(minute="*"),
+    },
+    "sync-inventory-from-warehouse": {
+        "task": "integrations.tasks.sync_inventory_from_warehouse",
+        "schedule": crontab(minute="*/5"),
+    },
+    "calculate-daily-metrics": {
+        "task": "analytics.tasks.calculate_daily_metrics_task",
+        "schedule": crontab(hour=0, minute=0),
     },
 }
 
