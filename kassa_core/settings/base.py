@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     "payments",
     "fiscal",
     "integrations",
-    "returns",
 ]
 
 MIDDLEWARE = [
