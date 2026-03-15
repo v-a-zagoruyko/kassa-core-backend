@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     "orders",
     "payments",
     "fiscal",
-    "integrations",
     "returns",
 ]
 
