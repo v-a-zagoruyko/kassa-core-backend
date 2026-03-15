@@ -467,3 +467,34 @@ class PromoCode(BaseModel):
 
         result = min(discount, order_amount)
         return result.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+class Package(BaseModel):
+    """Упаковка (пакет, сумка) для заказа."""
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='packages',
+        verbose_name='Заказ',
+    )
+    name = models.CharField(
+        max_length=255,
+        verbose_name='Название',
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Цена',
+    )
+    quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Количество',
+    )
+
+    class Meta:
+        verbose_name = 'Упаковка'
+        verbose_name_plural = 'Упаковки'
+
+    def __str__(self):
+        return f'{self.name} x{self.quantity} для {self.order_id}'

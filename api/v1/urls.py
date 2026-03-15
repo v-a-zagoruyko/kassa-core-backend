@@ -13,4 +13,5 @@ urlpatterns = [
     path("", include("common.api.v1.fiscal.urls")),
     path("", include("common.api.v1.integrations.urls")),
     path("", include("common.api.v1.analytics.urls")),
+    path("", include("common.api.v1.returns.urls")),
 ]
