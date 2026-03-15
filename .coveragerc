@@ -1,0 +1,17 @@
+[run]
+omit =
+    */migrations/*
+    manage.py
+    kassa_core/asgi.py
+    kassa_core/wsgi.py
+    */conftest.py
+    conftest.py
+    deploy/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    pass
