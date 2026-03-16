@@ -1,6 +1,7 @@
 """Сервисный слой фискального домена."""
 
 import logging
+from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
 from django.db import transaction
@@ -95,6 +96,95 @@ class ReceiptService:
             .count()
         )
         return f'{prefix}{str(existing_count + 1).zfill(6)}'
+
+    @staticmethod
+    @transaction.atomic
+    def generate_return_receipt(return_id: UUID):
+        """
+        Формирует чек возврата прихода (54-ФЗ, признак расчёта = 2).
+        """
+        from returns.models import Return
+        from .models import ReturnReceipt, ReturnReceiptItem
+
+        ret = Return.objects.select_for_update().prefetch_related(
+            'items__order_item__product'
+        ).select_related('order').get(pk=return_id)
+
+        if ReturnReceipt.objects.filter(return_obj=ret).exists():
+            raise ValueError(f'Чек возврата для возврата {return_id} уже существует.')
+
+        # Получить оригинальный чек продажи
+        original_receipt = None
+        try:
+            original_receipt = ret.order.receipt
+        except Exception:
+            pass
+
+        receipt_number = ReceiptService._generate_return_receipt_number()
+
+        items_data = []
+        for return_item in ret.items.all():
+            product_name = return_item.order_item.product.name
+            quantity = return_item.quantity
+            unit_price = (return_item.refund_amount / quantity).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+            items_data.append({
+                'name': product_name,
+                'quantity': quantity,
+                'price': str(unit_price),
+                'tax_rate': '20%',
+            })
+
+        fiscal_data = {
+            'type': 'return_income',  # признак расчёта = 2 (Возврат прихода)
+            'total': str(ret.total_amount),
+            'items': items_data,
+            'refund_method': ret.refund_method,
+            'original_receipt_number': original_receipt.receipt_number if original_receipt else None,
+        }
+
+        return_receipt = ReturnReceipt.objects.create(
+            return_obj=ret,
+            original_receipt=original_receipt,
+            receipt_number=receipt_number,
+            fiscal_data=fiscal_data,
+        )
+
+        for return_item in ret.items.all():
+            product_name = return_item.order_item.product.name
+            quantity = return_item.quantity
+            unit_price = (return_item.refund_amount / quantity).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+            ReturnReceiptItem.objects.create(
+                receipt=return_receipt,
+                product_name=product_name,
+                quantity=quantity,
+                price=unit_price,
+            )
+
+        logger.info('Создан чек возврата %s для возврата %s', receipt_number, return_id)
+        return return_receipt
+
+    @staticmethod
+    def _generate_return_receipt_number() -> str:
+        """Генерирует уникальный номер чека возврата формата RET-YYYYMMDD-NNNNNN."""
+        from .models import ReturnReceipt
+
+        today = timezone.now().date()
+        prefix = f"RET-{today.strftime('%Y%m%d')}-"
+        last = (
+            ReturnReceipt.objects.select_for_update()
+            .filter(receipt_number__startswith=prefix)
+            .order_by('-receipt_number')
+            .first()
+        )
+        if last:
+            seq = int(last.receipt_number.split('-')[-1]) + 1
+        else:
+            seq = 1
+        return f"{prefix}{seq:06d}"
 
     @staticmethod
     def send_to_ofd(receipt_id: UUID) -> None:
