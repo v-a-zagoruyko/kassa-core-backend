@@ -29,23 +29,25 @@ def send_return_receipt_to_ofd(self, return_receipt_id: str) -> None:
         logger.error('ReturnReceipt %s не найден', return_receipt_id)
         return
 
-    if return_receipt.status in (ReturnReceipt.Status.CONFIRMED, ReturnReceipt.Status.SENT):
+    from .models import Receipt
+
+    if return_receipt.status in (Receipt.Status.CONFIRMED, Receipt.Status.SENT):
         return  # идемпотентность
 
     try:
         client = OFDClient()
         response = client.send_receipt(return_receipt)
 
-        return_receipt.status = ReturnReceipt.Status.SENT
+        return_receipt.status = Receipt.Status.SENT
         return_receipt.sent_at = timezone.now()
         return_receipt.ofd_response = response
         if response.get('status') == 'accepted':
-            return_receipt.status = ReturnReceipt.Status.CONFIRMED
+            return_receipt.status = Receipt.Status.CONFIRMED
             return_receipt.confirmed_at = timezone.now()
         return_receipt.save()
 
     except Exception as exc:
-        return_receipt.status = ReturnReceipt.Status.FAILED
+        return_receipt.status = Receipt.Status.FAILED
         return_receipt.error_message = str(exc)
         return_receipt.save()
         logger.error('Ошибка отправки чека возврата %s в ОФД: %s', return_receipt_id, exc)
