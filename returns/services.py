@@ -1,7 +1,11 @@
+import logging
 from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
+_fiscal_logger = logging.getLogger('fiscal.alerts')
 
 from orders.models import Order
 from .models import Return, ReturnItem, ReturnStatus
@@ -112,5 +116,21 @@ class ReturnService:
             changed_by=ret.processed_by,
             comment=comment,
         )
+
+        # Фискализация возврата (обязательно по 54-ФЗ)
+        try:
+            from fiscal.services import ReceiptService as FiscalService
+            return_receipt = FiscalService.generate_return_receipt(return_id=ret.id)
+            from fiscal.tasks import send_return_receipt_to_ofd
+            send_return_receipt_to_ofd.delay(str(return_receipt.id))
+            logger.info(
+                'Чек возврата %s инициирован для возврата %s',
+                return_receipt.receipt_number, ret.id,
+            )
+        except Exception as exc:
+            _fiscal_logger.critical(
+                'ФИСКАЛИЗАЦИЯ ВОЗВРАТА ПРОВАЛЕНА для возврата %s: %s',
+                ret.id, exc, exc_info=True,
+            )
 
         return ret

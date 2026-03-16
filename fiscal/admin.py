@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import OFDResponse, Receipt, ReceiptItem, ReceiptStatus
+from .models import OFDResponse, Receipt, ReceiptItem, ReceiptStatus, ReturnReceipt, ReturnReceiptItem
 
 
 class ReceiptItemInline(admin.TabularInline):
@@ -44,6 +44,37 @@ class ReceiptAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Основное', {
             'fields': ('order', 'receipt_number', 'status'),
+        }),
+        ('Фискальные данные', {
+            'fields': ('fiscal_data', 'ofd_response'),
+            'classes': ('collapse',),
+        }),
+        ('Даты', {
+            'fields': ('sent_at', 'confirmed_at', 'error_message', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+
+class ReturnReceiptItemInline(admin.TabularInline):
+    model = ReturnReceiptItem
+    extra = 0
+    fields = ('product_name', 'quantity', 'price', 'total', 'tax_rate', 'tax_amount')
+    readonly_fields = ('total', 'tax_amount')
+
+
+@admin.register(ReturnReceipt)
+class ReturnReceiptAdmin(admin.ModelAdmin):
+    list_display = (
+        'receipt_number', 'return_obj', 'status', 'sent_at', 'confirmed_at', 'created_at',
+    )
+    list_filter = ('status',)
+    search_fields = ('receipt_number', 'return_obj__id')
+    readonly_fields = ('receipt_number', 'fiscal_data', 'ofd_response', 'created_at', 'updated_at')
+    inlines = (ReturnReceiptItemInline,)
+    fieldsets = (
+        ('Основное', {
+            'fields': ('return_obj', 'original_receipt', 'receipt_number', 'status'),
         }),
         ('Фискальные данные', {
             'fields': ('fiscal_data', 'ofd_response'),
