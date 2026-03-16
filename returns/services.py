@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+_fiscal_logger = logging.getLogger('fiscal.alerts')
 
 from orders.models import Order
 from .models import Return, ReturnItem, ReturnStatus
@@ -117,7 +118,6 @@ class ReturnService:
         )
 
         # Фискализация возврата (обязательно по 54-ФЗ)
-        _fiscal_logger = logging.getLogger('fiscal.alerts')
         try:
             from fiscal.services import ReceiptService as FiscalService
             return_receipt = FiscalService.generate_return_receipt(return_id=ret.id)
